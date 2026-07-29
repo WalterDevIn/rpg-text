@@ -1,0 +1,25 @@
+export const slime = Object.freeze({
+  id: "slime",
+  kind: "creature",
+  name: "Slime",
+  hitPoints: 12,
+  armorClass: 8,
+  initiativeBonus: -2,
+  abilityScores: {
+    strength: 14,
+    dexterity: 6,
+    constitution: 16,
+    intelligence: 1,
+    wisdom: 6,
+    charisma: 1,
+  },
+  controller: "manual",
+  faction: "monsters",
+  weapon: {
+    id: "slime-slam",
+    name: "Slam",
+    kind: "natural-weapon",
+    attack: { attackBonus: 4, damageDie: 6, damageBonus: 2, damageType: "ACID" },
+  },
+  inventory: [],
+});
