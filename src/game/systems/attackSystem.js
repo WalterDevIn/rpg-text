@@ -6,63 +6,66 @@ export function resolveAttack({ world, events, random, actorId, targetId }) {
   const actorCombatant = world.requireComponent(actorId, Component.COMBATANT);
   const targetCombatant = world.requireComponent(targetId, Component.COMBATANT);
   const targetArmorClass = world.requireComponent(targetId, Component.ARMOR_CLASS).value;
+  const equipment = world.requireComponent(actorId, Component.EQUIPMENT);
+  const attack = equipment.weapon?.attack ?? actorCombatant.unarmed;
 
-  if (actorCombatant.defeated) throw new Error(`${actorIdentity.name} is defeated and cannot act`);
-  if (targetCombatant.defeated) throw new Error(`${targetIdentity.name} is already defeated`);
+  if (actorCombatant.defeated) return invalid("ACTOR_DEFEATED");
+  if (targetCombatant.defeated) return invalid("TARGET_DEFEATED");
+  if (actorId === targetId) return invalid("INVALID_TARGET");
 
-  events.append("INTENT_DECLARED", { actorId, action: "ATTACK", targetId });
+  events.append("INTENT_DECLARED", { actorId, action: "ATTACK", targetId, instrumentId: equipment.weapon?.id ?? null });
 
-  const naturalRoll = random.roll(20);
-  const total = naturalRoll + actorCombatant.attack.attackBonus;
+  const attackRolls = rollAttackDice(random, hasCondition(world, targetId, "DODGING"));
+  const naturalRoll = Math.min(...attackRolls);
+  const total = naturalRoll + (attack.attackBonus ?? actorCombatant.proficiencyBonus);
   events.append("DICE_ROLLED", {
     actorId,
     purpose: "ATTACK",
-    notation: "1d20",
+    notation: attackRolls.length === 2 ? "2d20 keep lowest" : "1d20",
+    rolls: attackRolls,
     naturalRoll,
-    modifier: actorCombatant.attack.attackBonus,
+    modifier: attack.attackBonus ?? actorCombatant.proficiencyBonus,
     total,
   });
 
   if (naturalRoll !== 20 && total < targetArmorClass) {
     events.append("ATTACK_MISSED", { actorId, targetId, total, armorClass: targetArmorClass });
-    return { hit: false, damage: 0 };
+    return { ok: true, hit: false, damage: 0, trace: { attackRolls, total, targetArmorClass } };
   }
 
-  const damageRoll = random.roll(actorCombatant.attack.damageDie);
-  const damage = Math.max(1, damageRoll + actorCombatant.attack.damageBonus);
+  const damageRoll = attack.damageDie === 1 ? 1 : random.roll(attack.damageDie);
+  const damage = Math.max(1, damageRoll + (attack.damageBonus ?? 0));
   events.append("DICE_ROLLED", {
     actorId,
     purpose: "DAMAGE",
-    notation: `1d${actorCombatant.attack.damageDie}`,
+    notation: `1d${attack.damageDie}`,
     naturalRoll: damageRoll,
-    modifier: actorCombatant.attack.damageBonus,
+    modifier: attack.damageBonus ?? 0,
     total: damage,
   });
 
-  applyDamage({
-    world,
-    events,
-    targetId,
-    sourceId: actorId,
-    amount: damage,
-    damageType: actorCombatant.attack.damageType,
-  });
+  applyDamage({ world, events, targetId, sourceId: actorId, amount: damage, damageType: attack.damageType });
   events.append("ATTACK_HIT", { actorId, targetId, total, armorClass: targetArmorClass, damage });
-  return { hit: true, damage };
+  return { ok: true, hit: true, damage, trace: { attackRolls, total, targetArmorClass, damageRoll } };
+}
+
+function invalid(reason) {
+  return { ok: false, reason };
+}
+
+function hasCondition(world, entityId, condition) {
+  return world.requireComponent(entityId, Component.CONDITIONS).values.includes(condition);
+}
+
+function rollAttackDice(random, disadvantage) {
+  return disadvantage ? [random.roll(20), random.roll(20)] : [random.roll(20)];
 }
 
 function applyDamage({ world, events, targetId, sourceId, amount, damageType }) {
   const health = world.requireComponent(targetId, Component.HEALTH);
   const combatant = world.requireComponent(targetId, Component.COMBATANT);
   health.current = Math.max(0, health.current - amount);
-  events.append("DAMAGE_APPLIED", {
-    sourceId,
-    targetId,
-    amount,
-    damageType,
-    remainingHitPoints: health.current,
-  });
-
+  events.append("DAMAGE_APPLIED", { sourceId, targetId, amount, damageType, remainingHitPoints: health.current });
   if (health.current === 0 && !combatant.defeated) {
     combatant.defeated = true;
     events.append("COMBATANT_DEFEATED", { entityId: targetId, sourceId });
