@@ -1,0 +1,13 @@
+{
+  "name": "rpg-text",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "game": "node src/cli/index.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
