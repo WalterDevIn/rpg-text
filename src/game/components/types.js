@@ -5,6 +5,8 @@ export const Component = Object.freeze({
   ARMOR_CLASS: "ArmorClass",
   COMBATANT: "Combatant",
   CONTROLLER: "Controller",
+  INVENTORY: "Inventory",
   EQUIPMENT: "Equipment",
+  CONDITIONS: "Conditions",
   RELATIONSHIP: "Relationship",
 });
