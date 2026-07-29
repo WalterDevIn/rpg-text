@@ -13,11 +13,14 @@ export const goblin = Object.freeze({
     wisdom: 8,
     charisma: 8,
   },
-  attack: {
-    attackBonus: 4,
+  weapon: {
+    id: "scimitar",
+    name: "Scimitar",
+    ability: "dexterity",
+    attackBonus: 2,
     damageDie: 6,
-    damageBonus: 2,
-    damageType: "PIERCING",
+    damageBonus: 0,
+    damageType: "slashing",
   },
   controller: "ai",
   faction: "monsters",
