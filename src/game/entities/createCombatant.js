@@ -18,18 +18,21 @@ export function createCombatant(world, definition, overrides = {}) {
   world.addComponent(entityId, Component.ARMOR_CLASS, { value: merged.armorClass });
   world.addComponent(entityId, Component.COMBATANT, {
     initiativeBonus: merged.initiativeBonus ?? 0,
-    attack: structuredClone(merged.attack),
+    proficiencyBonus: merged.proficiencyBonus ?? 2,
+    unarmed: merged.unarmed ?? { damageDie: 1, damageBonus: 0, damageType: "bludgeoning" },
     defeated: false,
   });
-  world.addComponent(entityId, Component.CONTROLLER, {
-    type: merged.controller ?? "ai",
+  world.addComponent(entityId, Component.CONTROLLER, { type: merged.controller ?? "manual" });
+  world.addComponent(entityId, Component.INVENTORY, {
+    itemIds: [...(merged.inventory ?? [])],
   });
   world.addComponent(entityId, Component.EQUIPMENT, {
-    weaponId: merged.weaponId ?? null,
+    weapon: merged.weapon ? structuredClone(merged.weapon) : null,
+    armor: merged.armor ? structuredClone(merged.armor) : null,
+    shield: merged.shield ? structuredClone(merged.shield) : null,
   });
-  world.addComponent(entityId, Component.RELATIONSHIP, {
-    faction: merged.faction,
-  });
+  world.addComponent(entityId, Component.CONDITIONS, { values: [] });
+  world.addComponent(entityId, Component.RELATIONSHIP, { faction: merged.faction });
 
   return entityId;
 }
@@ -39,12 +42,11 @@ function mergeDefinition(definition, overrides) {
     ...definition,
     ...overrides,
     abilityScores: { ...definition.abilityScores, ...overrides.abilityScores },
-    attack: { ...definition.attack, ...overrides.attack },
   };
 }
 
 function validateDefinition(definition) {
-  for (const key of ["id", "kind", "name", "hitPoints", "armorClass", "abilityScores", "attack", "faction"]) {
+  for (const key of ["id", "kind", "name", "hitPoints", "armorClass", "abilityScores", "faction"]) {
     if (definition[key] === undefined) throw new Error(`Combatant definition lacks ${key}`);
   }
 }
