@@ -5,12 +5,12 @@ export function abilityModifier(score) {
 }
 
 export function getEquippedWeapon(world, entityId) {
-  const equipment = world.requireComponent(entityId, Component.EQUIPMENT);
-  return equipment.weapon ?? null;
+  return world.requireComponent(entityId, Component.EQUIPMENT).weapon ?? null;
 }
 
 export function getAttackProfile(world, entityId) {
   const abilities = world.requireComponent(entityId, Component.ABILITY_SCORES);
+  const combatant = world.requireComponent(entityId, Component.COMBATANT);
   const weapon = getEquippedWeapon(world, entityId);
 
   if (!weapon) {
@@ -18,19 +18,23 @@ export function getAttackProfile(world, entityId) {
     return {
       id: "unarmed-strike",
       name: "Unarmed strike",
-      attackBonus: modifier,
+      attackBonus: combatant.proficiencyBonus + modifier,
       damageDie: null,
-      damageBonus: modifier,
+      damageBonus: Math.max(1, modifier),
       damageType: "bludgeoning",
     };
   }
 
-  const ability = weapon.ability ?? "strength";
-  const modifier = abilityModifier(abilities[ability]);
+  const base = weapon.attack ?? weapon;
+  const abilityName = weapon.ability ?? "strength";
+  const abilityBonus = abilityModifier(abilities[abilityName]);
   return {
-    ...weapon,
-    attackBonus: modifier + (weapon.attackBonus ?? 0),
-    damageBonus: modifier + (weapon.damageBonus ?? 0),
+    id: weapon.id,
+    name: weapon.name,
+    attackBonus: base.attackBonus ?? combatant.proficiencyBonus + abilityBonus,
+    damageDie: base.damageDie ?? null,
+    damageBonus: base.damageBonus ?? abilityBonus,
+    damageType: base.damageType ?? "bludgeoning",
   };
 }
 
@@ -39,11 +43,9 @@ export function calculateArmorClass(world, entityId) {
   const equipment = world.requireComponent(entityId, Component.EQUIPMENT);
   const dexterity = abilityModifier(abilities.dexterity);
   const armor = equipment.armor;
-
   let armorClass = armor
     ? armor.baseArmorClass + (armor.addDexterity ? dexterity : 0)
     : 10 + dexterity;
-
   if (equipment.shield) armorClass += equipment.shield.armorClassBonus;
   return armorClass;
 }
