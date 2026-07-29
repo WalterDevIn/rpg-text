@@ -1,10 +1,10 @@
 export const longsword = Object.freeze({
   id: "longsword",
+  kind: "weapon",
   name: "Longsword",
-  attack: {
-    attackBonus: 5,
-    damageDie: 8,
-    damageBonus: 3,
-    damageType: "SLASHING",
-  },
+  ability: "strength",
+  damageDie: 8,
+  damageBonus: 0,
+  attackBonus: 2,
+  damageType: "slashing",
 });
