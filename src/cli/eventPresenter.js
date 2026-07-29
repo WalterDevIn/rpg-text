@@ -4,12 +4,22 @@ export function presentEvent(event, names) {
   switch (event.type) {
     case "COMBAT_STARTED":
       return "\n=== COMBAT STARTED ===";
+    case "ROUND_STARTED":
+      return `\n=== ROUND ${event.round} ===`;
     case "TURN_STARTED":
-      return `\nTurn: ${name(event.entityId)}`;
+      return `\nTurn: ${name(event.entityId)} (round ${event.round})`;
     case "INTENT_DECLARED":
       return `${name(event.actorId)} intends to attack ${name(event.targetId)}.`;
+    case "INTENT_REJECTED":
+      return `Rejected: ${event.reason}`;
+    case "TURN_PASSED":
+      return `${name(event.entityId)} passes.`;
+    case "CONDITION_APPLIED":
+      return `${name(event.entityId)} gains ${event.condition}.`;
+    case "CONDITION_EXPIRED":
+      return `${name(event.entityId)} loses ${event.condition}.`;
     case "DICE_ROLLED":
-      return `Dice · ${name(event.actorId)} ${event.purpose}: ${event.notation} (${event.naturalRoll}) ${signed(event.modifier)} = ${event.total}`;
+      return `Dice · ${name(event.actorId)} ${event.purpose}: ${event.notation} (${event.rolls?.join(", ") ?? event.naturalRoll}) ${signed(event.modifier)} = ${event.total}`;
     case "ATTACK_MISSED":
       return `Dungeon Master: ${name(event.actorId)} misses ${name(event.targetId)}.`;
     case "DAMAGE_APPLIED":
