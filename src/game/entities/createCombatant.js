@@ -1,30 +1,29 @@
 import { Component } from "../components/types.js";
+import { calculateArmorClass } from "../rules/equipmentRules.js";
 
 export function createCombatant(world, definition, overrides = {}) {
   validateDefinition(definition);
-  const entityId = world.createEntity(definition.kind);
   const merged = mergeDefinition(definition, overrides);
+  const entityId = world.createEntity(merged.kind);
 
   world.addComponent(entityId, Component.IDENTITY, {
     name: merged.name,
     kind: merged.kind,
     definitionId: merged.id,
   });
-  world.addComponent(entityId, Component.ABILITY_SCORES, merged.abilityScores);
+  world.addComponent(entityId, Component.ABILITY_SCORES, structuredClone(merged.abilityScores));
   world.addComponent(entityId, Component.HEALTH, {
     current: merged.hitPoints,
     max: merged.hitPoints,
   });
-  world.addComponent(entityId, Component.ARMOR_CLASS, { value: merged.armorClass });
   world.addComponent(entityId, Component.COMBATANT, {
     initiativeBonus: merged.initiativeBonus ?? 0,
     proficiencyBonus: merged.proficiencyBonus ?? 2,
-    unarmed: merged.unarmed ?? { damageDie: 1, damageBonus: 0, damageType: "bludgeoning" },
     defeated: false,
   });
   world.addComponent(entityId, Component.CONTROLLER, { type: merged.controller ?? "manual" });
   world.addComponent(entityId, Component.INVENTORY, {
-    itemIds: [...(merged.inventory ?? [])],
+    items: structuredClone(merged.inventory ?? []),
   });
   world.addComponent(entityId, Component.EQUIPMENT, {
     weapon: merged.weapon ? structuredClone(merged.weapon) : null,
@@ -33,6 +32,9 @@ export function createCombatant(world, definition, overrides = {}) {
   });
   world.addComponent(entityId, Component.CONDITIONS, { values: [] });
   world.addComponent(entityId, Component.RELATIONSHIP, { faction: merged.faction });
+  world.addComponent(entityId, Component.ARMOR_CLASS, {
+    value: merged.armorClass ?? calculateArmorClass(world, entityId),
+  });
 
   return entityId;
 }
@@ -42,11 +44,15 @@ function mergeDefinition(definition, overrides) {
     ...definition,
     ...overrides,
     abilityScores: { ...definition.abilityScores, ...overrides.abilityScores },
+    inventory: overrides.inventory ?? definition.inventory,
+    weapon: overrides.weapon === undefined ? definition.weapon : overrides.weapon,
+    armor: overrides.armor === undefined ? definition.armor : overrides.armor,
+    shield: overrides.shield === undefined ? definition.shield : overrides.shield,
   };
 }
 
 function validateDefinition(definition) {
-  for (const key of ["id", "kind", "name", "hitPoints", "armorClass", "abilityScores", "faction"]) {
+  for (const key of ["id", "kind", "name", "hitPoints", "abilityScores", "faction"]) {
     if (definition[key] === undefined) throw new Error(`Combatant definition lacks ${key}`);
   }
 }
