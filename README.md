@@ -1,14 +1,34 @@
 # rpg-text
 
-Motor de RPG narrativo desarrollado desde el juego hacia afuera. El estado actual es un núcleo de combate aislado, determinista, configurable y ejecutable sin servidor ni navegador.
+A narrative RPG application developed through demonstrable vertical features.
 
-## Ejecutar el simulador
+The current repository contains a deterministic, configurable combat core and CLI. The target product adds a graphical narrative client, a server boundary, persistence, and later world exploration without moving authoritative rules out of the game simulation.
+
+## Current state
+
+The implemented foundation supports:
+
+- ECS entities and components;
+- configurable multi-participant combat;
+- factions and controller assignment;
+- initiative, turns, and rounds;
+- structured `ATTACK`, `DODGE`, and `PASS` actions;
+- structured validation failures;
+- equipment-derived and unarmed attacks;
+- inventory, weapons, armor, shields, and combat conditions;
+- deterministic seeded random generation;
+- snapshots, intent history, and structured events;
+- defeat handling and faction victory;
+- reusable sample characters, monsters, and equipment;
+- automated tests.
+
+## Run the current simulator
 
 ```bash
 npm run game
 ```
 
-La CLI inicia un combate de cuatro participantes y acepta:
+Available CLI commands:
 
 ```text
 status
@@ -20,45 +40,59 @@ events
 quit
 ```
 
-## Capacidades actuales
-
-- ECS con entidades y componentes independientes.
-- Construcción configurable de combates con múltiples participantes y facciones.
-- Controlador asignable por combatiente.
-- Iniciativa individual, orden de turnos y rondas.
-- Acciones estructuradas `ATTACK`, `DODGE` y `PASS`.
-- Rechazos estructurados para actores, turnos y objetivos inválidos.
-- Ataques derivados del arma equipada o del ataque desarmado.
-- Inventario, arma, armadura, escudo y condiciones de combate.
-- Esquiva con desventaja para los ataques recibidos hasta el próximo turno.
-- Daño, derrota, omisión de derrotados y victoria por facción.
-- RNG sembrado, snapshots, historial de intenciones y eventos estructurados.
-- Guerrero, mago, goblin, rata de cueva y slime.
-- Espada larga, daga, bastón, armaduras y escudo.
-
-## Ejecutar pruebas
+## Run tests
 
 ```bash
 npm test
 ```
 
-Las pruebas cubren el almacenamiento ECS, reproducibilidad, finalización del combate, construcción configurable, múltiples participantes, rondas, validación de intenciones y esquiva.
+## Target application structure
 
-## Estructura
+```text
+client/
+  graphical narrative interface
 
-- `src/game/ecs`: mundo y almacenamiento de componentes.
-- `src/game/components`: tipos de componentes.
-- `src/game/entities`: creación de combatientes desde contenido.
-- `src/game/intents`: acciones y errores públicos de validación.
-- `src/game/rules`: reglas derivadas de equipo.
-- `src/game/random`: fuente aleatoria determinista.
-- `src/game/events`: registro ordenado de eventos.
-- `src/game/systems`: resolución autoritativa de acciones.
-- `src/game/simulation`: builder, sesión, iniciativa, rondas y snapshots.
-- `src/content`: personajes, criaturas y equipo reutilizable.
-- `src/cli`: cliente temporal de consola.
-- `tests`: pruebas automáticas del núcleo.
+server/
+  API, sessions, persistence, content, and authoritative game core
 
-## Frontera futura
+shared/
+  public contracts shared by client and server
+```
 
-El servidor enviará intenciones al `game core` y coordinará sesiones, persistencia y multijugador. El cliente representará eventos y snapshots. Ninguna de esas capas contendrá reglas autoritativas de combate.
+The current `src/game`, `src/content`, and `src/cli` structure will be migrated without discarding the existing combat behavior.
+
+## Development approach
+
+The project is built through playable vertical slices.
+
+Early progression:
+
+```text
+preserve and restructure the current combat core
+  -> build encounter setup frontend
+  -> render real combat state and events
+  -> submit a real player action
+  -> complete combat through the UI
+  -> persist survivors and experience
+```
+
+The frontend is part of the early product. It is not postponed until every server or simulation subsystem is complete.
+
+## Documentation
+
+Read in this order:
+
+1. [`docs/CURRENT_CONTEXT.md`](docs/CURRENT_CONTEXT.md) — current implemented state and immediate next milestone.
+2. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — ownership, dependency direction, and target structure.
+3. [`docs/PRODUCT_DECISIONS.md`](docs/PRODUCT_DECISIONS.md) — accepted product behavior and scope.
+4. [`docs/FRONTEND_DESIGN.md`](docs/FRONTEND_DESIGN.md) — visual and interaction direction preserved from the earlier prototypes.
+5. [`docs/DEVELOPMENT_STRATEGY.md`](docs/DEVELOPMENT_STRATEGY.md) — feature-driven AI implementation workflow.
+6. [`docs/ROADMAP.md`](docs/ROADMAP.md) — demonstrable milestone sequence.
+7. [`docs/VISION.md`](docs/VISION.md) — long-term product direction.
+8. [`AGENTS.md`](AGENTS.md) — mandatory repository instructions for implementation agents.
+
+## Architectural rule
+
+The game core is authoritative.
+
+The server coordinates transport, sessions, and persistence. The client collects intent and presents snapshots and events. Neither layer duplicates combat rules.
