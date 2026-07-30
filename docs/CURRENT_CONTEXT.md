@@ -117,7 +117,7 @@ Primary identity:
 - monospaced typography;
 - thin light borders;
 - minimal red/blue chromatic fringe;
-- c​​yan context/selection accent;
+- cyan context/selection accent;
 - green friendly accent;
 - orange action accent;
 - red hostile accent;
