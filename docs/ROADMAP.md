@@ -297,6 +297,24 @@ Functional outcomes:
 
 The REST boundary is implemented with the Node.js built-in HTTP server. Sessions remain in memory; persistence, authentication, and multiplayer remain deferred.
 
+## Milestone 11 — Spanish natural-language combat and semantic text
+
+Status: `COMPLETED`
+
+Goal:
+
+Replace the normal combat action menu with deterministic Spanish command input while preserving the existing structured game intent path.
+
+Demonstration:
+
+- type `Ataco al goblin`, preview authoritative ACTION and CREATURE annotations, and execute it;
+- type `Esquivo` and `Paso` through the same command endpoint;
+- receive explicit incomplete, ambiguous, and unsupported feedback;
+- inspect semantic participant, item, action, dice, and damage details in chat;
+- complete combat with server-controlled AI turns.
+
+The parser is intentionally domain-limited. Spell phrases can be recognized and highlighted as SPELL but spellcasting remains unsupported. DAMAGE has priority over DICE_ROLL in semantic presentation.
+
 ## Later stages
 
 Status: `LATER`

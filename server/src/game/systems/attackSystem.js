@@ -11,7 +11,7 @@ export function resolveAttack({ world, events, random, actorId, targetId }) {
   const attack = getAttackProfile(world, actorId);
   const targetArmorClass = world.requireComponent(targetId, Component.ARMOR_CLASS).value;
   const weapon = world.requireComponent(actorId, Component.EQUIPMENT).weapon;
-  events.append("INTENT_DECLARED", { actorId, action: "ATTACK", targetId, instrumentId: weapon?.id ?? null });
+  events.append("INTENT_DECLARED", { actorId, action: "ATTACK", targetId, instrumentId: weapon?.id ?? null, instrumentName: weapon?.name ?? "Unarmed strike" });
 
   const attackRolls = rollAttackDice(random, hasCondition(world, targetId, "DODGING"));
   const naturalRoll = Math.min(...attackRolls);
@@ -40,9 +40,13 @@ export function resolveAttack({ world, events, random, actorId, targetId }) {
     naturalRoll: damageRoll,
     modifier: attack.damageBonus,
     total: damage,
+    damageType: attack.damageType,
+    targetId,
+    sourceId: actorId,
+    instrumentId: weapon?.id ?? "unarmed-strike",
   });
-  applyDamage({ world, events, targetId, sourceId: actorId, amount: damage, damageType: attack.damageType });
-  events.append("ATTACK_HIT", { actorId, targetId, total, armorClass: targetArmorClass, damage });
+  applyDamage({ world, events, targetId, sourceId: actorId, amount: damage, damageType: attack.damageType, notation: attack.damageDie ? `1d${attack.damageDie}` : "1", roll: damageRoll, modifier: attack.damageBonus });
+  events.append("ATTACK_HIT", { actorId, targetId, total, armorClass: targetArmorClass, damage, damageType: attack.damageType, instrumentId: weapon?.id ?? "unarmed-strike" });
   return { ok: true, hit: true, damage, trace: { attackRolls, total, targetArmorClass, damageRoll } };
 }
 
@@ -53,11 +57,11 @@ function hasCondition(world, entityId, condition) {
 function rollAttackDice(random, disadvantage) {
   return disadvantage ? [random.roll(20), random.roll(20)] : [random.roll(20)];
 }
-function applyDamage({ world, events, targetId, sourceId, amount, damageType }) {
+function applyDamage({ world, events, targetId, sourceId, amount, damageType, notation, roll, modifier }) {
   const health = world.requireComponent(targetId, Component.HEALTH);
   const combatant = world.requireComponent(targetId, Component.COMBATANT);
   health.current = Math.max(0, health.current - amount);
-  events.append("DAMAGE_APPLIED", { sourceId, targetId, amount, damageType, remainingHitPoints: health.current });
+  events.append("DAMAGE_APPLIED", { sourceId, targetId, amount, damageType, notation, rolls: [roll], modifier, remainingHitPoints: health.current });
   if (health.current === 0 && !combatant.defeated) {
     combatant.defeated = true;
     events.append("COMBATANT_DEFEATED", { entityId: targetId, sourceId });

@@ -87,7 +87,7 @@ The long-term product accepts natural-language intentions.
 
 Command interpretation should be deterministic, context-aware, inspectable, and testable. Generative AI is not the authoritative command interpreter.
 
-Early combat versions may use explicit actions and targets through buttons, suggestions, or constrained commands. This is preferred over prematurely implementing a broad natural-language parser.
+Early combat uses a deterministic, domain-limited Spanish command parser for ATTACK, DODGE, and PASS. Suggestions help complete text but do not replace the language path. This is preferred over prematurely implementing broad natural-language understanding.
 
 The system should preserve:
 
@@ -258,7 +258,7 @@ Open application
   -> choose controller and scenario
   -> start combat
   -> view initiative and current turn
-  -> choose an action
+  -> write a Spanish command
   -> view dice and narrative resolution
   -> continue until combat ends
   -> review outcome
@@ -297,3 +297,5 @@ The first version does not require:
 8. Treat tests as executable product requirements, not optional cleanup.
 9. Keep documentation in English for implementation-agent consistency.
 10. Record major product and architecture changes before or with implementation.
+
+11. The browser must not maintain a second authoritative command parser; interpretation and semantic references come from the server.

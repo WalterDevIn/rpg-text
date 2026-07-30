@@ -53,6 +53,14 @@ export function submitCombatIntent(sessionId, intent) {
   return request(`/combat-sessions/${encodeURIComponent(sessionId)}/intents`, { method: "POST", body: intent });
 }
 
+export function interpretCombatCommand(sessionId, text) {
+  return request(`/combat-sessions/${encodeURIComponent(sessionId)}/interpret`, { method: "POST", body: { text } });
+}
+
+export function executeCombatCommand(sessionId, text) {
+  return request(`/combat-sessions/${encodeURIComponent(sessionId)}/commands`, { method: "POST", body: { text } });
+}
+
 export const combatService = Object.freeze({
   getHealth,
   listEncounterCharacters,
@@ -63,6 +71,8 @@ export const combatService = Object.freeze({
   getCombatSession,
   getCombatEvents,
   submitCombatIntent,
+  interpretCombatCommand,
+  executeCombatCommand,
 });
 
 async function request(path, { method = "GET", body, baseUrl } = {}) {

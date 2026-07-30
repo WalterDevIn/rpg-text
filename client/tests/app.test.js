@@ -139,6 +139,30 @@ test("HTTP service sends all supported intent types", async () => {
   }
 });
 
+test("HTTP service previews and executes Spanish commands through dedicated endpoints", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  globalThis.fetch = async (url, options) => {
+    requests.push({ url, options });
+    return { ok: true, status: 200, json: async () => ({ status: "RESOLVED", originalText: "Ataco al goblin", annotations: [], references: {}, intent: { type: "ATTACK" }, events: [], snapshot: { status: "ACTIVE" } }) };
+  };
+  try {
+    await combatService.interpretCombatCommand("combat-1", "Ataco al goblin");
+    await combatService.executeCombatCommand("combat-1", "Ataco al goblin");
+    assert.equal(requests[0].url.endsWith("/interpret"), true);
+    assert.equal(requests[1].url.endsWith("/commands"), true);
+    assert.equal(JSON.parse(requests[1].options.body).text, "Ataco al goblin");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("normal combat UI no longer contains the structured action button menu", async () => {
+  const source = await readFile(new URL("../src/components/actionComposer.js", import.meta.url), "utf8");
+  assert.match(source, /command-input/);
+  assert.doesNotMatch(source, /ATTACK.*DODGE.*PASS/);
+});
+
 test("invalid setup remains invalid before the Start button can be enabled", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ ok: false, errors: [{ code: "CHARACTER_REQUIRED", message: "Select a character." }] }) });

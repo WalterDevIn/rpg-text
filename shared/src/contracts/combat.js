@@ -25,6 +25,24 @@ export const EncounterErrorCode = Object.freeze({
   OPPOSING_SIDES_REQUIRED: "OPPOSING_SIDES_REQUIRED",
 });
 
+export const SemanticKind = Object.freeze({
+  CHARACTER: "CHARACTER",
+  CREATURE: "CREATURE",
+  ITEM: "ITEM",
+  SPELL: "SPELL",
+  ACTION: "ACTION",
+  DAMAGE: "DAMAGE",
+  DICE_ROLL: "DICE_ROLL",
+});
+
+export const InterpretationStatus = Object.freeze({
+  RESOLVED: "RESOLVED",
+  INCOMPLETE: "INCOMPLETE",
+  AMBIGUOUS: "AMBIGUOUS",
+  UNSUPPORTED: "UNSUPPORTED",
+  INVALID_CONTEXT: "INVALID_CONTEXT",
+});
+
 /** @typedef {{ type: string, actorId: string, targetId?: string }} CombatIntent */
 /** @typedef {{ status: string, round: number, activeEntityId: string|null, turnOrder: string[], participants: object[], history: object[] }} CombatSnapshot */
 /** @typedef {{ sequence: number, type: string, [key: string]: unknown }} CombatEvent */

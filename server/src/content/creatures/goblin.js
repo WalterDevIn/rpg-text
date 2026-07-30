@@ -2,6 +2,7 @@ export const goblin = Object.freeze({
   id: "goblin",
   kind: "creature",
   name: "Goblin",
+  aliases: ["goblin", "trasgo"],
   hitPoints: 7,
   armorClass: 13,
   initiativeBonus: 2,

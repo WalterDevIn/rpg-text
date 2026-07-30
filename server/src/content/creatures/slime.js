@@ -2,6 +2,7 @@ export const slime = Object.freeze({
   id: "slime",
   kind: "creature",
   name: "Slime",
+  aliases: ["baba", "gelatina"],
   hitPoints: 12,
   armorClass: 8,
   initiativeBonus: -2,

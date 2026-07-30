@@ -12,27 +12,64 @@ export function CombatScreen({ root, service, sessionId, snapshot, events, scena
     pending: false,
     error: null,
     connectionStatus: "connected",
+    draft: "",
+    interpretation: null,
+    interpreting: false,
   };
+  let interpretationRequest = 0;
+  let interpretationTimer;
 
   function appendEvents(nextEvents) {
     const existing = new Set(state.messages.map((message) => message.sequence));
     const additions = nextEvents
       .filter((event) => !existing.has(event.sequence))
       .sort((left, right) => left.sequence - right.sequence)
-      .map((event) => presentCombatEvent(event, state.snapshot.participants));
+      .map((event) => event.semantic ?? presentCombatEvent(event, state.snapshot.participants));
     state = { ...state, messages: [...state.messages, ...additions], eventCursor: Math.max(state.eventCursor, maxSequence(nextEvents)) };
   }
 
-  async function submitIntent(intent) {
+  function onDraftChange(text) {
+    state = { ...state, draft: text, interpretation: null, error: null };
+    clearTimeout(interpretationTimer);
+    if (!text.trim()) { state = { ...state, interpreting: false }; render(); return; }
+    state = { ...state, interpreting: true };
+    render();
+    const requestId = ++interpretationRequest;
+    interpretationTimer = setTimeout(async () => {
+      try {
+        const interpretation = await service.interpretCombatCommand(sessionId, text);
+        if (requestId !== interpretationRequest || state.draft !== text) return;
+        state = { ...state, interpretation, interpreting: false };
+      } catch (error) {
+        if (requestId !== interpretationRequest || state.draft !== text) return;
+        state = { ...state, interpretation: null, interpreting: false, error, connectionStatus: error.code === "NETWORK_ERROR" ? "unavailable" : state.connectionStatus };
+      }
+      render();
+    }, 280);
+  }
+
+  function addPlayerCommand(text, interpretation) {
+    const message = { id: `command-${Date.now()}`, sequence: `command-${Date.now()}`, type: "COMMAND_SUBMITTED", origin: "player", tone: "friendly", text, annotations: interpretation.annotations, references: interpretation.references };
+    return message;
+  }
+
+  function onSuggestion(name) {
+    const replacement = state.draft.match(/\b(?:al|a|la|el)\s+[^,.!?]*$/i);
+    onDraftChange(replacement ? `${state.draft.slice(0, replacement.index)}al ${name}` : `${state.draft.trim()} ${name}`.trim());
+  }
+
+  async function submitCommand(text) {
     state = { ...state, pending: true, error: null };
     render();
     try {
-      const result = await service.submitCombatIntent(sessionId, intent);
+      const result = await service.executeCombatCommand(sessionId, text);
       if (result.snapshot) state = { ...state, snapshot: result.snapshot };
+      state = { ...state, messages: [...state.messages, addPlayerCommand(text, result.interpretation)] };
       appendEvents(result.events ?? []);
-      state = { ...state, pending: false, connectionStatus: "connected" };
+      state = { ...state, pending: false, connectionStatus: "connected", draft: "", interpretation: null, interpreting: false };
     } catch (error) {
       if (error.data?.snapshot) state = { ...state, snapshot: error.data.snapshot };
+      if (error.data?.interpretation) state = { ...state, interpretation: error.data.interpretation };
       appendEvents(error.data?.events ?? []);
       state = { ...state, pending: false, error, connectionStatus: error.code === "NETWORK_ERROR" ? "unavailable" : state.connectionStatus };
     }
@@ -47,6 +84,7 @@ export function CombatScreen({ root, service, sessionId, snapshot, events, scena
       const newEvents = await service.getCombatEvents(sessionId, { since: state.eventCursor });
       state = { ...state, snapshot: session.snapshot, connectionStatus: "connected", error: null };
       appendEvents(newEvents.events ?? []);
+      if (state.draft.trim()) onDraftChange(state.draft);
     } catch (error) {
       state = { ...state, connectionStatus: "unavailable", error };
     }
@@ -55,6 +93,9 @@ export function CombatScreen({ root, service, sessionId, snapshot, events, scena
 
   function render() {
     const previousViewport = root.querySelector(".chat-viewport");
+    const previousInput = root.querySelector(".command-input");
+    const selectionStart = previousInput?.selectionStart ?? state.draft.length;
+    const selectionEnd = previousInput?.selectionEnd ?? selectionStart;
     const previousScrollTop = previousViewport?.scrollTop ?? 0;
     const previousDistance = previousViewport ? previousViewport.scrollHeight - previousViewport.scrollTop - previousViewport.clientHeight : 0;
     root.replaceChildren();
@@ -70,12 +111,15 @@ export function CombatScreen({ root, service, sessionId, snapshot, events, scena
     const rail = document.createElement("aside");
     rail.className = "combat-rail";
     rail.append(ParticipantPanel({ participants: state.snapshot.participants, activeEntityId: state.snapshot.activeEntityId }));
-    rail.append(ActionComposer({ snapshot: state.snapshot, onSubmit: submitIntent, pending: state.pending, error: state.error }));
+    rail.append(ActionComposer({ snapshot: state.snapshot, draft: state.draft, interpretation: state.interpretation, interpreting: state.interpreting, onChange: onDraftChange, onSubmit: submitCommand, onSuggestion, pending: state.pending, disabled: state.connectionStatus !== "connected", error: state.error }));
     if (state.snapshot.status === "FINISHED") rail.append(renderResult());
     if (state.error && state.connectionStatus === "unavailable") rail.append(renderConnectionNotice());
     layout.append(rail);
     stage.append(layout);
     root.append(stage);
+    const nextInput = root.querySelector(".command-input");
+    if (nextInput && document.activeElement !== nextInput && state.draft) nextInput.focus();
+    if (nextInput && document.activeElement === nextInput) nextInput.setSelectionRange(selectionStart, selectionEnd);
   }
 
   function renderResult() {
@@ -99,7 +143,7 @@ export function CombatScreen({ root, service, sessionId, snapshot, events, scena
 }
 
 function toMessages(events, snapshot) {
-  return [...events].sort((left, right) => left.sequence - right.sequence).map((event) => presentCombatEvent(event, snapshot.participants));
+  return [...events].sort((left, right) => left.sequence - right.sequence).map((event) => event.semantic ?? presentCombatEvent(event, snapshot.participants));
 }
 
 function maxSequence(events) {

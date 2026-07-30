@@ -1,10 +1,18 @@
-export {
+import { createApplication } from "./createApplication.js";
+
+const application = createApplication();
+
+export const {
   createCombatSession,
+  getCombatEvents,
+  getCombatSnapshot,
   listEncounterCharacters,
   listEncounterCreatures,
   listEncounterScenarios,
-  validateEncounterSetup,
-  getCombatSnapshot,
   submitCombatIntent,
-  getCombatEvents,
-} from "./combatApplication.js";
+  validateEncounterSetup,
+  interpretCombatCommand,
+  executeCombatCommand,
+} = application;
+
+export { createApplication } from "./createApplication.js";

@@ -79,6 +79,7 @@ Recommended semantic starting points from the accepted prototype:
 --accent-context: #67d9ff;
 --accent-enemy: #ff5c73;
 --accent-dice: #c79cff;
+--accent-damage: #ff704d;
 ```
 
 These values are reference values, not an immutable token specification. Changes should preserve contrast, semantic meaning, and restrained intensity.
@@ -281,12 +282,7 @@ The early prototype used a limited visible message set. The product should prefe
 
 ## 12. Input model
 
-Early combat interaction may combine:
-
-- suggested action buttons;
-- explicit action controls;
-- a text input for constrained commands;
-- target selection.
+The normal combat interaction is a Spanish natural-language command composer. Structured action controls remain available only to tests, CLI, or explicit developer adapters.
 
 The input area should:
 
@@ -297,7 +293,11 @@ The input area should:
 - preserve typed text after recoverable validation errors;
 - display actionable error feedback.
 
-The visual command-highlighting concept from the prototype may be reintroduced later for recognized verbs, creatures, and places.
+The composer previews server-authoritative annotations after a short debounce. `RESOLVED` text can be submitted; `INCOMPLETE`, `AMBIGUOUS`, `UNSUPPORTED`, and `INVALID_CONTEXT` text cannot. Suggestions insert names into the draft and do not bypass the language path. Enter submits resolved text; Shift+Enter creates a newline.
+
+Recognized fragments use an authoritative semantic preview and interactive tooltips. The overlay preserves original offsets and the editable textarea remains the focus target.
+
+Semantic colors use action orange, character cyan, creature faction colors, item amber, spell blue-violet, damage crimson/orange, and dice violet. Damage is visually distinct from dice because `DAMAGE` has priority over `DICE_ROLL`.
 
 ## 13. Context information
 

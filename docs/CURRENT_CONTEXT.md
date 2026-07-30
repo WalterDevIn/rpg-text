@@ -33,7 +33,7 @@ Development is feature-driven. The frontend is included from the first meaningfu
 
 ## Current implementation
 
-The repository now contains the preserved combat simulator under server ownership, a server-owned encounter catalog and validation boundary, a REST API, shared public contracts, and a browser client connected through HTTP.
+The repository now contains the preserved combat simulator under server ownership, category-specific content catalogs, explicit application use cases, deterministic Spanish command interpretation, semantic event presentation, a repository-backed REST API, shared public contracts, and a browser client connected through HTTP.
 
 Documented current paths:
 
@@ -50,8 +50,13 @@ server/src/game/simulation
 server/src/content
 server/src/cli
 server/src/application
-server/src/content/scenarios
 server/src/http
+server/src/content/catalog
+server/src/infrastructure/persistence
+server/src/language/spanish
+server/src/game/combat/getActionContext.js
+server/src/application/interpretation
+server/src/application/presentation
 server/tests
 client/src/app
 client/src/screens
@@ -166,7 +171,7 @@ The repository now documents:
 
 ## Completed migration
 
-The core and content were physically moved under `server/src`, existing game tests were moved under `server/tests`, and cross-boundary application coverage was added under `tests/integration`. `server/src/application` exposes session creation, snapshots, intent submission, and ordered events. `server/src/http` exposes those functions through REST.
+The core and content were physically moved under `server/src`, existing game tests were moved under `server/tests`, and cross-boundary application coverage was added under `tests/integration`. `server/src/application/createApplication.js` composes catalogs, application use cases, and the temporary in-memory repository. `server/src/http/app.js` exposes those use cases through focused REST routes, middleware, and presenters.
 
 Expected result:
 
@@ -195,7 +200,9 @@ Scenario data is currently metadata-only: Open Field exposes a 30-foot starting 
 
 ## REST connection
 
-The browser loads characters, creatures, and scenarios from the REST API, validates setup through `POST /api/encounter/validate`, and creates sessions through `POST /api/combat-sessions`. It renders initial and subsequent structured events, submits ATTACK/DODGE/PASS intents, and reconciles snapshots by event cursor. The server automatically resolves AI-controlled turns with a bounded deterministic target-selection policy. Combat sessions are held in memory and disappear when the server restarts.
+The browser loads characters, creatures, and scenarios from the REST API, validates setup through `POST /api/encounter/validate`, and creates sessions through `POST /api/combat-sessions`. It previews Spanish commands through `/interpret`, executes resolved text through `/commands`, renders original player text with authoritative annotations, and renders event semantic segments with tooltip references. The server automatically resolves AI-controlled turns with a bounded deterministic target-selection policy. Combat sessions are held in memory and disappear when the server restarts.
+
+The supported parser scope is deterministic Spanish ATTACK, DODGE, and PASS phrasing. It returns `RESOLVED`, `INCOMPLETE`, `AMBIGUOUS`, `UNSUPPORTED`, or `INVALID_CONTEXT`; it never silently selects an ambiguous target. Recognized unsupported spell phrases such as `Lanzo bola de fuego` receive SPELL semantics but are not executed. Semantic presentation supports CHARACTER, CREATURE, ITEM, SPELL, ACTION, DAMAGE, and DICE_ROLL, with DAMAGE taking priority over DICE_ROLL.
 
 The client uses relative `/api` through the development proxy first, then the current Codespaces development fallback, with a user-configurable backend URL persisted locally. The example forwarded backend is `https://shiny-winner-g4qwrwp65g593vg7w-3000.app.github.dev`; it is development-only.
 

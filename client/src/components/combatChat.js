@@ -1,3 +1,5 @@
+import { renderAnnotatedText, renderSemanticSegments } from "./semanticText.js";
+
 export function CombatChat({ messages, autoScroll = true, scrollTop = 0 }) {
   const section = document.createElement("section");
   section.className = "combat-chat-panel";
@@ -10,7 +12,9 @@ export function CombatChat({ messages, autoScroll = true, scrollTop = 0 }) {
     const label = document.createElement("small");
     label.textContent = message.origin === "player" ? "YOU" : message.origin.toUpperCase();
     const text = document.createElement("p");
-    text.textContent = message.text;
+    if (message.segments) renderSemanticSegments(text, message.segments, message.references);
+    else if (message.annotations) renderAnnotatedText(text, message.text, message.annotations, message.references);
+    else text.textContent = message.text;
     article.append(label, text);
     viewport.append(article);
   }

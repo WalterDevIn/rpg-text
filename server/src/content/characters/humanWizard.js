@@ -4,6 +4,7 @@ export const humanWizard = Object.freeze({
   id: "human-wizard",
   kind: "character",
   name: "Human Wizard",
+  aliases: ["mago", "maga", "hechicero", "hechicera"],
   hitPoints: 8,
   abilityScores: {
     strength: 8,

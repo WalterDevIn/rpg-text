@@ -8,8 +8,10 @@ export function createCombatant(world, definition, overrides = {}) {
 
   world.addComponent(entityId, Component.IDENTITY, {
     name: merged.name,
+    aliases: [...(merged.aliases ?? [])],
     kind: merged.kind,
     definitionId: merged.id,
+    description: merged.description ?? null,
   });
   world.addComponent(entityId, Component.ABILITY_SCORES, structuredClone(merged.abilityScores));
   world.addComponent(entityId, Component.HEALTH, {

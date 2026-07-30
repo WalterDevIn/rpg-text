@@ -1,4 +1,5 @@
 export function presentCombatEvent(event, participants) {
+  if (event.semantic) return event.semantic;
   const byId = new Map(participants.map((participant) => [participant.entityId, participant]));
   const name = (id) => byId.get(id)?.identity?.name ?? id ?? "unknown";
   const participant = (id) => byId.get(id);

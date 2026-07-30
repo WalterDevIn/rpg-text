@@ -25,8 +25,9 @@ rpg-text/
 │   └── tests/
 ├── server/
 │   ├── src/
-│   │   ├── api/
+│   │   ├── http/
 │   │   ├── application/
+│   │   ├── language/
 │   │   ├── game/
 │   │   │   ├── ecs/
 │   │   │   ├── components/
@@ -38,8 +39,7 @@ rpg-text/
 │   │   │   ├── systems/
 │   │   │   └── simulation/
 │   │   ├── content/
-│   │   ├── persistence/
-│   │   └── sessions/
+│   │   └── infrastructure/
 │   └── tests/
 ├── shared/
 │   └── contracts/
@@ -101,7 +101,7 @@ client -> HTTP client -> REST API -> shared contracts
 server API -> application services -> game core
 server persistence -> application services
 server sessions -> application services
-content -> game factories and rules
+content -> game factories, rules, and language metadata
 ```
 
 Forbidden dependency directions:
@@ -206,7 +206,7 @@ It does not own:
 - creature AI decisions that affect authoritative simulation;
 - persistent campaign truth.
 
-The client submits intent and renders results.
+The client submits natural-language text and renders interpretation/results. It does not decide the meaning of the text.
 
 ## 8. Client service boundary
 
@@ -240,7 +240,9 @@ client -> HTTP adapter -> server transport -> application services -> game
 
 The REST transport is deliberately small and has no persistence, authentication, or multiplayer responsibilities.
 
-The current HTTP surface is implemented in `server/src/http/server.js` with JSON routes for health, encounter catalogs/validation, combat-session creation, snapshots, ordered events, and structured intents. The application layer performs bounded automatic turns for AI-controlled participants before returning control to the client. The session map is in memory and is never returned to callers.
+The current HTTP surface is composed in `server/src/http/app.js`, started by `server/src/http/server.js`, and split into route modules for health, encounters, and combat sessions. JSON body parsing, CORS, and error handling are middleware responsibilities. The application layer performs bounded automatic turns for AI-controlled participants before returning control to the client. `server/src/infrastructure/persistence/inMemoryCombatSessionRepository.js` owns the in-memory session map and it is never returned to callers.
+
+The composition root is `server/src/application/createApplication.js`. It assembles content catalogs, the session repository, application use cases, deterministic Spanish interpretation, and semantic presentation without hiding a global session map. `POST /interpret` is preview-only; `POST /commands` interprets again and delegates to the existing structured intent path. The built-in `node:http` transport remains intentionally small; Express is not introduced because the existing transport can now be tested and understood as focused modules without a framework dependency.
 
 ## 9. Shared contracts
 
@@ -345,6 +347,12 @@ The system should preserve or make inspectable:
 - displayed narrative.
 
 This trace is required for debugging, tests, replay, and eventual multiplayer synchronization.
+
+## 13a. Natural-language and semantic presentation
+
+The browser's primary combat path is Spanish text. `server/src/language/spanish` performs deterministic normalization, tokenization, action recognition, and context-based reference resolution. `application/interpretation` builds context from `game/combat/getActionContext.js`, exposes `/interpret` for preview, and `/commands` for authoritative re-interpretation followed by the existing structured intent use case. The game never knows Spanish.
+
+Public semantic kinds are `CHARACTER`, `CREATURE`, `ITEM`, `SPELL`, `ACTION`, `DAMAGE`, and `DICE_ROLL`. Editable player text uses original-text ranges with exclusive `end` offsets. Server-generated messages use semantic segments and reference dictionaries. Damage has explicit priority over dice, so damage rolls are `DAMAGE`, not overlapping `DICE_ROLL` annotations. Unsupported spells are highlighted but never converted into another action.
 
 ## 14. Testing strategy
 

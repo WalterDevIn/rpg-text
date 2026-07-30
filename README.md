@@ -2,7 +2,7 @@
 
 A narrative RPG application developed through demonstrable vertical features.
 
-The repository contains a deterministic, configurable combat core exposed through a server-owned application boundary and a browser client connected by REST. Persistence and world exploration remain future work.
+The repository contains a deterministic, configurable combat core exposed through a server-owned application boundary and a browser client connected by REST. Combat is played through deterministic Spanish natural-language commands and semantic narrative text. Persistence and world exploration remain future work.
 
 ## Current state
 
@@ -56,10 +56,10 @@ Package-specific commands are `npm run test:server`, `npm run test:client`, and 
 4. Assign each selected participant to Party or Hostiles.
 5. Select Open Field on the Scenario tab.
 6. Review the summary and press Start combat.
-7. Choose a hostile target and use ATTACK, or use DODGE/PASS.
+7. Type `Ataco al goblin`, `Esquivo`, or `Paso` and submit when the command is resolved.
 8. Continue through server-controlled creature turns until the final result appears.
 
-The browser loads all content through REST and sends the setup to `POST /api/combat-sessions`. The combat chat renders authoritative events and supports ATTACK, DODGE, and PASS until victory or defeat. Open Field currently supplies setup metadata only; distance, cover, and terrain do not alter combat rules yet. Restarting the server removes sessions.
+The browser loads all content through REST and sends the setup to `POST /api/combat-sessions`. The combat screen previews Spanish commands through `/interpret` and executes them through `/commands`; the server converts them to existing ATTACK, DODGE, and PASS intents. Chat renders authoritative semantic segments with tooltips. Open Field currently supplies setup metadata only; distance, cover, and terrain do not alter combat rules yet. Restarting the server removes sessions.
 
 ## Codespaces connection
 
@@ -76,6 +76,8 @@ The browser first uses relative `/api` requests through the client development p
 - `GET /api/combat-sessions/:sessionId`
 - `GET /api/combat-sessions/:sessionId/events`
 - `POST /api/combat-sessions/:sessionId/intents`
+- `POST /api/combat-sessions/:sessionId/interpret`
+- `POST /api/combat-sessions/:sessionId/commands`
 
 ## Application structure
 
@@ -84,18 +86,19 @@ client/
   public/            browser entry document
   src/app/           application shell, state, and static dev host
   src/screens/       encounter setup and combat screens
-  src/components/    setup, combat chat, participants, actions, and connection controls
+  src/components/    setup, semantic chat, command composer, participants, and connection controls
   src/services/      centralized HTTP service
   src/styles/        client foundation styles
   tests/              HTTP service and state tests
 
 server/
-  src/http/          REST transport
-  src/application/  application/session API
-  src/game/         authoritative combat simulation
-  src/content/      simulation content
-  src/cli/          developer adapter
-  tests/             game and application tests
+  src/http/          composed REST transport, routes, middleware, presenters
+  src/application/  encounter/session use cases and AI orchestration
+  src/game/          authoritative combat simulation
+  src/content/      canonical definitions and catalogs
+  src/infrastructure/ temporary in-memory session adapter
+  src/cli/           developer adapter
+  tests/             game, boundary, application, and HTTP tests
 
 shared/
   public contracts shared by client and server
@@ -121,7 +124,7 @@ preserve and restructure the current combat core
   -> persist survivors and experience
 ```
 
-The frontend is part of the early product. It is not postponed until every server or simulation subsystem is complete. Encounter setup and complete browser combat are connected to REST; the next slice is persistence.
+The frontend is part of the early product. It is not postponed until every server or simulation subsystem is complete. Encounter setup and complete browser combat are connected to REST; Spanish command interpretation and semantic event presentation are implemented, while persistence remains the next product slice.
 
 ## Documentation
 
@@ -140,4 +143,4 @@ Read in this order:
 
 The game core is authoritative.
 
-The server application owns in-memory combat sessions, server-side AI turns, and delegates all outcomes to `server/src/game`. The client uses a centralized HTTP service and does not import server modules, ECS, systems, rules, component stores, or mutable simulation objects. Persistence, authentication, and multiplayer are not implemented.
+The server application owns session use cases, server-side AI turns, and delegates all outcomes to `server/src/game`. `server/src/application/createApplication.js` is the composition root for catalogs, use cases, and the temporary in-memory repository. The client uses a centralized HTTP service and does not import server modules, ECS, systems, rules, component stores, or mutable simulation objects. Persistence, authentication, and multiplayer are not implemented.

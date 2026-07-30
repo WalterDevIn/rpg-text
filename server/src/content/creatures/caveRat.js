@@ -4,6 +4,7 @@ export const caveRat = Object.freeze({
   id: "cave-rat",
   kind: "creature",
   name: "Cave Rat",
+  aliases: ["rata", "rata de cueva"],
   hitPoints: 5,
   initiativeBonus: 3,
   abilityScores: {

@@ -6,6 +6,7 @@ export const humanFighter = Object.freeze({
   id: "human-fighter",
   kind: "character",
   name: "Walter",
+  aliases: ["walter", "guerrero", "luchador"],
   hitPoints: 14,
   initiativeBonus: 2,
   proficiencyBonus: 2,
