@@ -33,23 +33,34 @@ Development is feature-driven. The frontend is included from the first meaningfu
 
 ## Current implementation
 
-The repository currently contains an isolated combat simulator under `src/`.
+The repository now contains the preserved combat simulator under server ownership, a server-owned encounter catalog and validation boundary, a REST API, shared public contracts, and a browser client connected through HTTP.
 
 Documented current paths:
 
 ```text
-src/game/ecs
-src/game/components
-src/game/entities
-src/game/intents
-src/game/rules
-src/game/random
-src/game/events
-src/game/systems
-src/game/simulation
-src/content
-src/cli
-tests
+server/src/game/ecs
+server/src/game/components
+server/src/game/entities
+server/src/game/intents
+server/src/game/rules
+server/src/game/random
+server/src/game/events
+server/src/game/systems
+server/src/game/simulation
+server/src/content
+server/src/cli
+server/src/application
+server/src/content/scenarios
+server/src/http
+server/tests
+client/src/app
+client/src/screens
+client/src/components
+client/src/services
+client/src/services/eventPresenter.js
+client/public
+shared/src/contracts
+tests/integration
 ```
 
 Current commands:
@@ -57,7 +68,15 @@ Current commands:
 ```bash
 npm run game
 npm test
+npm run client
+npm run server:cli
+npm run server
+npm run dev
 ```
+
+`npm run server` serves REST at `http://localhost:3000`. `npm run client` serves the browser application at `http://localhost:4173`. `npm run dev` starts both.
+
+Additional focused commands are `npm run test:server`, `npm run test:client`, and `npm run test:integration`.
 
 The CLI currently accepts:
 
@@ -132,7 +151,7 @@ The frontend should not adopt a generic blue-gray dashboard style.
 
 ## Current milestone
 
-Milestone 0: documentation and target structure.
+Milestone 5: complete playable combat through the browser.
 
 The repository now documents:
 
@@ -145,9 +164,9 @@ The repository now documents:
 - current context;
 - implementation-agent instructions.
 
-## Next implementation milestone
+## Completed migration
 
-Milestone 1: introduce the target application structure while preserving the existing combat core.
+The core and content were physically moved under `server/src`, existing game tests were moved under `server/tests`, and cross-boundary application coverage was added under `tests/integration`. `server/src/application` exposes session creation, snapshots, intent submission, and ordered events. `server/src/http` exposes those functions through REST.
 
 Expected result:
 
@@ -155,17 +174,34 @@ Expected result:
 client/
 server/src/game/
 server/src/content/
+server/src/application/
 shared/
 ```
 
-The migration must keep these demonstrations working:
+The migration keeps these demonstrations working:
 
 ```bash
 npm test
 npm run game
 ```
 
-The client workspace should become runnable, but Milestone 1 should not spend substantial effort on the final visual interface. The next milestone delivers encounter setup and the accepted visual foundation.
+The client workspace is browser-runnable. Encounter setup and the narrative combat screen are implemented through REST.
+
+## Completed encounter setup
+
+The client now loads server-owned human fighter, human wizard, goblin, cave rat, slime, and Open Field summaries through the service boundary. Characters, creatures, and scenario are separate accessible tabs. Client state retains selections and side assignments while tabs change. Server validation requires opposing sides, known participants, and a known scenario before creating a real combat session.
+
+Scenario data is currently metadata-only: Open Field exposes a 30-foot starting distance with no cover or difficult terrain, but the existing simulation does not yet consume those values.
+
+## REST connection
+
+The browser loads characters, creatures, and scenarios from the REST API, validates setup through `POST /api/encounter/validate`, and creates sessions through `POST /api/combat-sessions`. It renders initial and subsequent structured events, submits ATTACK/DODGE/PASS intents, and reconciles snapshots by event cursor. The server automatically resolves AI-controlled turns with a bounded deterministic target-selection policy. Combat sessions are held in memory and disappear when the server restarts.
+
+The client uses relative `/api` through the development proxy first, then the current Codespaces development fallback, with a user-configurable backend URL persisted locally. The example forwarded backend is `https://shiny-winner-g4qwrwp65g593vg7w-3000.app.github.dev`; it is development-only.
+
+## Next implementation milestone
+
+Milestone 6: persistent survivors and experience. The next slice should preserve finished combat consequences beyond an in-memory server restart.
 
 ## Immediate implementation constraints
 
@@ -173,7 +209,7 @@ The client workspace should become runnable, but Milestone 1 should not spend su
 2. Read `AGENTS.md` first.
 3. Preserve existing combat behavior.
 4. Do not duplicate rules in the client.
-5. Do not implement world exploration, persistence, HTTP, authentication, or multiplayer during the structural milestone.
+5. Do not implement world exploration, persistence, authentication, or multiplayer during the current transport milestone.
 6. Do not create empty architecture for distant features.
 7. Keep root commands coherent and documented.
 8. Update this file after each meaningful feature.

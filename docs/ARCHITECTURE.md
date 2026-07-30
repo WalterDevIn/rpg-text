@@ -54,13 +54,14 @@ The exact internal folders may evolve when a demonstrated feature requires it. T
 
 ## 3. Current-state migration
 
-The current repository already contains a functional combat core under:
+The migration is complete. The functional combat core now lives under:
 
 ```text
-src/game
-src/content
-src/cli
-tests
+server/src/game
+server/src/content
+server/src/cli
+server/tests
+tests/integration
 ```
 
 That implementation must be preserved. The structural migration is:
@@ -68,10 +69,11 @@ That implementation must be preserved. The structural migration is:
 ```text
 src/game     -> server/src/game
 src/content  -> server/src/content
-src/cli      -> temporary developer adapter or server-side CLI
+src/cli      -> server/src/cli
+tests        -> server/tests, with cross-package coverage in tests/integration
 ```
 
-The move must not be performed as a blind file relocation. It should happen inside a feature that keeps the simulator executable and the tests passing.
+The move was performed while keeping the simulator executable and the tests passing. The server application boundary is exposed to the browser through the REST transport; the game core remains inaccessible to clients.
 
 The current combat model is valuable application code, not disposable prototype code. Existing capabilities include ECS storage, configurable participants and factions, controller assignment, initiative, turn order, rounds, structured actions, validation failures, equipment-derived attacks, inventory, combat conditions, deterministic random generation, snapshots, intent history, events, defeat handling, and victory resolution.
 
@@ -95,7 +97,7 @@ server game core
 More explicitly:
 
 ```text
-client -> transport client -> shared contracts
+client -> HTTP client -> REST API -> shared contracts
 server API -> application services -> game core
 server persistence -> application services
 server sessions -> application services
@@ -222,25 +224,27 @@ submitCombatAction(combatId, action)
 finishCombat(combatId)
 ```
 
-During the fastest initial frontend slice, this interface may use an in-process or local adapter. The UI-facing contract must remain compatible with replacement by an HTTP adapter.
+The current client service is a centralized HTTP adapter. It owns the API base URL, JSON requests, response parsing, structured HTTP errors, and network failure conversion.
 
-Acceptable transition:
-
-```text
-client -> local application adapter -> game
-```
-
-Target transition:
+Completed transition:
 
 ```text
-client -> HTTP adapter -> server -> game
+client -> HTTP client -> REST API -> application services -> game
 ```
 
-The temporary adapter is an acceleration mechanism, not a second rules engine.
+Future transport evolution:
+
+```text
+client -> HTTP adapter -> server transport -> application services -> game
+```
+
+The REST transport is deliberately small and has no persistence, authentication, or multiplayer responsibilities.
+
+The current HTTP surface is implemented in `server/src/http/server.js` with JSON routes for health, encounter catalogs/validation, combat-session creation, snapshots, ordered events, and structured intents. The application layer performs bounded automatic turns for AI-controlled participants before returning control to the client. The session map is in memory and is never returned to callers.
 
 ## 9. Shared contracts
 
-`shared/contracts` contains stable data contracts that both client and server may consume.
+`shared/src/contracts` contains stable data contracts that both client and server may consume. The initial contracts define action identifiers, public snapshot/event JSDoc shapes, and structured application errors.
 
 Suitable contents:
 

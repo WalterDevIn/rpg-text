@@ -2,7 +2,7 @@
 
 A narrative RPG application developed through demonstrable vertical features.
 
-The current repository contains a deterministic, configurable combat core and CLI. The target product adds a graphical narrative client, a server boundary, persistence, and later world exploration without moving authoritative rules out of the game simulation.
+The repository contains a deterministic, configurable combat core exposed through a server-owned application boundary and a browser client connected by REST. Persistence and world exploration remain future work.
 
 ## Current state
 
@@ -22,7 +22,7 @@ The implemented foundation supports:
 - reusable sample characters, monsters, and equipment;
 - automated tests.
 
-## Run the current simulator
+## Run the simulator
 
 ```bash
 npm run game
@@ -46,20 +46,65 @@ quit
 npm test
 ```
 
-## Target application structure
+Package-specific commands are `npm run test:server`, `npm run test:client`, and `npm run test:integration`. `npm run server` starts the REST API at `http://localhost:3000`; `npm run client` starts the browser host at `http://localhost:4173`; `npm run dev` starts both.
+
+## Demonstrate encounter setup
+
+1. Run `npm run dev`.
+2. Open `http://localhost:4173` in a browser.
+3. Select a character, then select one or more creatures.
+4. Assign each selected participant to Party or Hostiles.
+5. Select Open Field on the Scenario tab.
+6. Review the summary and press Start combat.
+7. Choose a hostile target and use ATTACK, or use DODGE/PASS.
+8. Continue through server-controlled creature turns until the final result appears.
+
+The browser loads all content through REST and sends the setup to `POST /api/combat-sessions`. The combat chat renders authoritative events and supports ATTACK, DODGE, and PASS until victory or defeat. Open Field currently supplies setup metadata only; distance, cover, and terrain do not alter combat rules yet. Restarting the server removes sessions.
+
+## Codespaces connection
+
+The browser first uses relative `/api` requests through the client development proxy. If that path is unavailable, it tries the current development Codespaces fallback, and the Server connection panel accepts a backend base URL without `/api/health`. Values can be tested, saved in local storage, reset to automatic mode, and retried. The current forwarded development example is `https://shiny-winner-g4qwrwp65g593vg7w-3000.app.github.dev`; it is not a production endpoint.
+
+## REST endpoints
+
+- `GET /api/health`
+- `GET /api/encounter/characters`
+- `GET /api/encounter/creatures`
+- `GET /api/encounter/scenarios`
+- `POST /api/encounter/validate`
+- `POST /api/combat-sessions`
+- `GET /api/combat-sessions/:sessionId`
+- `GET /api/combat-sessions/:sessionId/events`
+- `POST /api/combat-sessions/:sessionId/intents`
+
+## Application structure
 
 ```text
 client/
-  graphical narrative interface
+  public/            browser entry document
+  src/app/           application shell, state, and static dev host
+  src/screens/       encounter setup and combat screens
+  src/components/    setup, combat chat, participants, actions, and connection controls
+  src/services/      centralized HTTP service
+  src/styles/        client foundation styles
+  tests/              HTTP service and state tests
 
 server/
-  API, sessions, persistence, content, and authoritative game core
+  src/http/          REST transport
+  src/application/  application/session API
+  src/game/         authoritative combat simulation
+  src/content/      simulation content
+  src/cli/          developer adapter
+  tests/             game and application tests
 
 shared/
   public contracts shared by client and server
+
+tests/integration/
+  cross-boundary tests
 ```
 
-The current `src/game`, `src/content`, and `src/cli` structure will be migrated without discarding the existing combat behavior.
+The former `src/game`, `src/content`, and `src/cli` paths have been physically moved under `server/src`. There is no duplicate legacy core.
 
 ## Development approach
 
@@ -76,7 +121,7 @@ preserve and restructure the current combat core
   -> persist survivors and experience
 ```
 
-The frontend is part of the early product. It is not postponed until every server or simulation subsystem is complete.
+The frontend is part of the early product. It is not postponed until every server or simulation subsystem is complete. Encounter setup and complete browser combat are connected to REST; the next slice is persistence.
 
 ## Documentation
 
@@ -95,4 +140,4 @@ Read in this order:
 
 The game core is authoritative.
 
-The server coordinates transport, sessions, and persistence. The client collects intent and presents snapshots and events. Neither layer duplicates combat rules.
+The server application owns in-memory combat sessions, server-side AI turns, and delegates all outcomes to `server/src/game`. The client uses a centralized HTTP service and does not import server modules, ECS, systems, rules, component stores, or mutable simulation objects. Persistence, authentication, and multiplayer are not implemented.

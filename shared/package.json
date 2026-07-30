@@ -1,0 +1,6 @@
+{
+  "name": "@rpg-text/shared",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.js"
+}

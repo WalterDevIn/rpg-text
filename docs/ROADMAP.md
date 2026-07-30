@@ -9,6 +9,7 @@ A milestone is complete only when its demonstration works and its critical tests
 Status values:
 
 - `CURRENT`: active next product milestone.
+- `COMPLETED`: implemented and verified milestone.
 - `PLANNED`: accepted direction, not yet active.
 - `LATER`: intentionally deferred.
 - `EXISTING FOUNDATION`: already present code that supports future slices but is not itself the full product milestone.
@@ -36,7 +37,7 @@ This foundation must be preserved while the product becomes a client/server appl
 
 ## Milestone 0 — Documentation and target structure
 
-Status: `CURRENT`
+Status: `COMPLETED`
 
 Goal:
 
@@ -58,7 +59,7 @@ Completion criteria:
 
 ## Milestone 1 — Application structure and preserved combat core
 
-Status: `PLANNED`
+Status: `COMPLETED`
 
 Goal:
 
@@ -91,7 +92,7 @@ Not included:
 
 ## Milestone 2 — Frontend foundation and encounter setup
 
-Status: `PLANNED`
+Status: `COMPLETED`
 
 Goal:
 
@@ -106,7 +107,7 @@ Demonstration:
 5. Assign opposing factions and controllers where applicable.
 6. Select a basic scenario.
 7. See a valid encounter summary.
-8. Start the encounter and reach the combat screen.
+8. Start the encounter and receive a validated combat-ready result.
 
 Functional outcomes:
 
@@ -115,15 +116,15 @@ Functional outcomes:
 - encounter setup screen;
 - real content adapter;
 - validation before Start Combat;
-- combat screen shell;
+- combat-ready result surface;
 - accepted dark terminal visual identity;
 - responsive baseline.
 
-The combat screen may initially show the created initial snapshot without accepting actions.
+Scenario metadata is displayed but does not yet affect simulation rules. The narrative combat screen is the next milestone.
 
 ## Milestone 3 — Initial combat state and narrative event feed
 
-Status: `PLANNED`
+Status: `COMPLETED`
 
 Goal:
 
@@ -148,7 +149,7 @@ Functional outcomes:
 
 ## Milestone 4 — First real player action
 
-Status: `PLANNED`
+Status: `COMPLETED`
 
 Goal:
 
@@ -167,14 +168,14 @@ Functional outcomes:
 - action composer;
 - target selection;
 - pending/disabled state;
-- local application adapter or server application command;
+ - server application command;
 - structured validation feedback;
 - event rendering after resolution;
 - critical integration tests.
 
 ## Milestone 5 — Complete playable combat
 
-Status: `PLANNED`
+Status: `COMPLETED`
 
 Goal:
 
@@ -197,9 +198,11 @@ Functional outcomes:
 - replay/new encounter navigation;
 - complete vertical integration test at the highest practical layer.
 
+The browser now plays the existing combat simulation through REST until an authoritative finished result. AI-controlled turns are resolved server-side with a bounded target-selection policy. The chat, participant panel, action controls, connection recovery, and final result are implemented.
+
 ## Milestone 6 — Persistent survivors and experience
 
-Status: `PLANNED`
+Status: `CURRENT`
 
 Goal:
 
@@ -271,7 +274,7 @@ Demonstration:
 
 ## Milestone 10 — HTTP server boundary
 
-Status: `PLANNED`
+Status: `COMPLETED`
 
 Goal:
 
@@ -291,6 +294,8 @@ Functional outcomes:
 - transport validation;
 - client HTTP adapter;
 - integration and contract tests.
+
+The REST boundary is implemented with the Node.js built-in HTTP server. Sessions remain in memory; persistence, authentication, and multiplayer remain deferred.
 
 ## Later stages
 

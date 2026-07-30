@@ -3,7 +3,8 @@ export class EventLog {
   #nextSequence = 1;
 
   append(type, payload = {}) {
-    const event = Object.freeze({ sequence: this.#nextSequence++, type, ...structuredClone(payload) });
+    const details = structuredClone(payload);
+    const event = Object.freeze({ sequence: this.#nextSequence++, type, ...details, payload: details });
     this.#events.push(event);
     return event;
   }
