@@ -29,3 +29,9 @@ Continue Combat appears only when a stored session reference can be recovered. H
 The setup draft is owned by the application context and persisted as a versioned compact object. Each participant stores a source ID, encounter-local instance key, display metadata, side, and controller separately. Duplicate templates are labeled by instance number. Review is the only screen with Start Combat and sends structured participant data through server validation before creating a real session. The current server supports `party`/`hostiles`, `manual`/`ai`, scenario selection, and a deterministic seed; no unsupported optional mechanics are exposed.
 
 Creation Hub contains disabled Create Character, Create Companion, and Create Creature actions. They do not navigate, call the server, mutate the draft, or write storage. Settings provides persisted sound, volume, animation, reduced motion, server testing/change, and safe local-reference/preferences clearing without deleting authoritative server data.
+
+## Connection and Version
+
+The connection screen provides the predefined `Codespaces Development` server at `https://shiny-winner-g4qwrwp65g593vg7w-3000.app.github.dev` plus the existing custom address option. Server addresses are stored origin-only and the health request is built centrally as `/api/health`. Health checks use a 10-second timeout and report invalid addresses, unreachable or timed-out servers, authorization/private Codespaces ports, missing health endpoints, HTML pages, invalid JSON, incompatible JSON, and server errors with retry and change-server actions.
+
+The mobile version is read from Expo application metadata through `expo-constants`. The current version is `0.1.0`, matching `mobile/app.json` and `mobile/package.json`, and appears on the connection screen and in Settings.

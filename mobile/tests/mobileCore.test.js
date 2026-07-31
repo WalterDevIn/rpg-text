@@ -2,6 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createMobileApi, normalizeMobileApiBaseUrl } from "../src/services/mobileApi.js";
+import { checkServerHealth, HEALTH_TIMEOUT_MS } from "../src/services/healthCheck.js";
+import { predefinedServers } from "../src/services/serverOptions.js";
+import { getAppVersion } from "../src/config/appMetadata.js";
 import { eventMessage, mergeCombatEvents } from "../src/utilities/combatEvents.js";
 import { createLocalCommandMessage, groupCombatMessages, semanticStyleKey, toCombatMessages } from "../src/utilities/combatPresentation.js";
 import { createAudioPool } from "../src/audio/audioPool.js";
@@ -11,9 +14,47 @@ import { diceInfo, isDiceMessage, isMultipleDice, presentationPolicy, visibleSem
 import { createEncounterDraft, participantLabel } from "../src/state/encounterDraft.js";
 
 test("mobile API base URLs normalize without requiring /api", () => {
-  assert.equal(normalizeMobileApiBaseUrl("http://10.0.2.2:3000"), "http://10.0.2.2:3000/api");
-  assert.equal(normalizeMobileApiBaseUrl("https://example.test/api/"), "https://example.test/api");
-  assert.equal(normalizeMobileApiBaseUrl("https://example.test/api/health"), "https://example.test/api");
+  assert.equal(normalizeMobileApiBaseUrl("http://10.0.2.2:3000"), "http://10.0.2.2:3000");
+  assert.equal(normalizeMobileApiBaseUrl("https://example.test/api/"), "https://example.test");
+  assert.equal(normalizeMobileApiBaseUrl("https://example.test/api/health"), "https://example.test");
+});
+
+test("predefined Codespaces server is origin-only and health uses exactly one API prefix", async () => {
+  assert.equal(predefinedServers[0].label, "Codespaces Development");
+  assert.equal(predefinedServers[0].address, "https://shiny-winner-g4qwrwp65g593vg7w-3000.app.github.dev");
+  const calls = [];
+  const api = createMobileApi(predefinedServers[0].address, { fetchImpl: async (url) => { calls.push(url); return new Response(JSON.stringify({ status: "ok" }), { status: 200, headers: { "Content-Type": "application/json" } }); } });
+  await api.getHealth();
+  assert.deepEqual(calls, ["https://shiny-winner-g4qwrwp65g593vg7w-3000.app.github.dev/api/health"]);
+  assert.doesNotMatch(calls[0], /\/api\/api/);
+});
+
+test("health diagnostics classify invalid, unreachable, timeout, status, HTML, JSON, and contract failures", async () => {
+  const response = (body, status = 200, contentType = "application/json") => new Response(body, { status, headers: { "Content-Type": contentType } });
+  assert.equal((await checkServerHealth("bad address")).diagnostic.title, "Invalid server address");
+  assert.equal((await checkServerHealth("https://example.test", { fetchImpl: async () => { throw new TypeError("offline"); } })).diagnostic.title, "Server unreachable");
+  assert.equal((await checkServerHealth("https://example.test", { fetchImpl: async (_url, { signal }) => await new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })))), timeoutMs: 8 })).diagnostic.title, "Connection timed out");
+  assert.equal((await checkServerHealth("https://example.test", { fetchImpl: async () => response("", 401) })).diagnostic.title, "Server authorization required");
+  assert.equal((await checkServerHealth("https://example.test", { fetchImpl: async () => response("", 403) })).diagnostic.title, "Server authorization required");
+  const notFound = await checkServerHealth("https://example.test", { fetchImpl: async () => response("{}", 404) });
+  assert.equal(notFound.diagnostic.title, "Health endpoint not found"); assert.match(notFound.diagnostic.message, /https:\/\/example\.test\/api\/health/);
+  const html = await checkServerHealth("https://example.test", { fetchImpl: async () => response("<html>Hello<script>secret</script></html>", 200, "text/html") });
+  assert.equal(html.diagnostic.title, "Unexpected web page received"); assert.equal(html.diagnostic.preview, "Hello"); assert.doesNotMatch(html.diagnostic.preview, /secret/);
+  assert.equal((await checkServerHealth("https://example.test", { fetchImpl: async () => response("not-json") })).diagnostic.title, "Invalid server response");
+  assert.equal((await checkServerHealth("https://example.test", { fetchImpl: async () => response(JSON.stringify({ status: "other" })) })).diagnostic.title, "Incompatible server");
+  assert.equal((await checkServerHealth("https://example.test", { fetchImpl: async () => response("{}", 500) })).diagnostic.title, "Server error");
+  assert.equal(HEALTH_TIMEOUT_MS, 10000);
+});
+
+test("aborted health checks return without a failure diagnostic", async () => {
+  const controller = new AbortController(); controller.abort();
+  const result = await checkServerHealth("https://example.test", { signal: controller.signal, fetchImpl: async () => { throw new Error("must not call"); } });
+  assert.equal(result.aborted, true);
+});
+
+test("app version reads Expo metadata and safely falls back", () => {
+  assert.equal(getAppVersion({ expoConfig: { version: "0.1.0" } }), "0.1.0");
+  assert.equal(getAppVersion({ expoConfig: {} }), "unknown");
 });
 
 test("mobile navigation exposes the recoverable home and staged setup routes", () => {
@@ -47,6 +88,9 @@ test("mobile app registers the complete explicit stack and settings exposes pers
   const settings = readFileSync(new URL("../src/screens/SettingsScreen.js", import.meta.url), "utf8");
   assert.match(settings, /masterVolume/);
   assert.match(settings, /clearLocalPreferences/);
+  assert.match(readFileSync(new URL("../src/screens/ServerConnectionScreen.js", import.meta.url), "utf8"), /predefinedServers/);
+  assert.match(settings, /App version/);
+  assert.match(readFileSync(new URL("../src/config/appMetadata.js", import.meta.url), "utf8"), /expoConfig/);
 });
 
 test("mobile API rejects invalid URLs and returns encounter validation details", async () => {
@@ -61,7 +105,9 @@ test("mobile API explains a successful non-JSON response", async () => {
   const api = createMobileApi("http://localhost:3000", {
     fetchImpl: async () => new Response("<html>Metro</html>", { status: 200 }),
   });
-  await assert.rejects(api.getHealth(), { code: "INVALID_RESPONSE", status: 200, message: "The server returned an invalid response: <html>Metro</html>" });
+  const result = await api.getHealth();
+  assert.equal(result.ok, false);
+  assert.equal(result.diagnostic.title, "Unexpected web page received");
 });
 
 test("mobile event merge sorts and deduplicates by sequence", () => {

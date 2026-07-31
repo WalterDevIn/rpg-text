@@ -83,4 +83,13 @@ export const styles = StyleSheet.create({
   smallChoiceText: { color: colors.text, fontSize: 11 },
   removeText: { color: colors.red, fontSize: 11, marginTop: 10 },
   editText: { color: colors.cyan, fontSize: 12 },
+  serverOption: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, padding: 14, borderRadius: 3, marginBottom: 9 },
+  serverOptionSelected: { borderColor: colors.cyan, backgroundColor: "#0b171b" },
+  connected: { color: colors.green, marginTop: 14, lineHeight: 20 },
+  version: { color: colors.muted, fontSize: 11, textAlign: "center", marginTop: 24 },
+  diagnostic: { borderLeftWidth: 2, borderLeftColor: colors.red, paddingLeft: 10, marginTop: 16 },
+  diagnosticTitle: { color: colors.red, fontSize: 16, marginBottom: 5 },
+  diagnosticMeta: { color: colors.muted, fontSize: 11, lineHeight: 17, marginTop: 7 },
+  diagnosticActions: { flexDirection: "row", gap: 8 },
+  detailsToggle: { color: colors.cyan, fontSize: 11, marginTop: 10 },
 });

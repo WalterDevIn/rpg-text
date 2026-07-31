@@ -228,6 +228,8 @@ Combat message presentation is client-owned. `key-press.mp3`, `dice.mp3`, and `d
 
 The client uses relative `/api` through the development proxy first, then the current Codespaces development fallback, with a user-configurable backend URL persisted locally. The example forwarded backend is `https://shiny-winner-g4qwrwp65g593vg7w-3000.app.github.dev`; it is development-only.
 
+The mobile connection screen also exposes `Codespaces Development` as a predefined origin, while retaining custom server entry. Origin-only addresses are normalized centrally and health checks request `/api/health` with a 10-second timeout, structured diagnostics, retry/change actions, and Codespaces public-port guidance. The current mobile version is `0.1.0` from Expo metadata and is shown on Connection and Settings; it matches `mobile/app.json` and `mobile/package.json`.
+
 ## Next implementation milestone
 
 Milestone 6: persistent survivors and experience. The next slice should preserve finished combat consequences beyond an in-memory server restart.

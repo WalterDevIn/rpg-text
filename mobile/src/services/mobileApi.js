@@ -1,3 +1,8 @@
+import { checkServerHealth } from "./healthCheck.js";
+import { normalizeMobileApiBaseUrl } from "./urlNormalization.js";
+
+export { normalizeMobileApiBaseUrl } from "./urlNormalization.js";
+
 export class MobileApiError extends Error {
   constructor({ status = 0, code = "NETWORK_ERROR", message = "The server is unavailable.", details = [], data = null } = {}) {
     super(message);
@@ -9,22 +14,11 @@ export class MobileApiError extends Error {
   }
 }
 
-export function normalizeMobileApiBaseUrl(value) {
-  const input = String(value ?? "").trim();
-  if (!input) throw new MobileApiError({ code: "INVALID_SERVER_URL", message: "Enter a server URL." });
-  let parsed;
-  try { parsed = new URL(input); } catch { throw new MobileApiError({ code: "INVALID_SERVER_URL", message: "Enter a valid server URL." }); }
-  if (!/^https?:$/.test(parsed.protocol)) throw new MobileApiError({ code: "INVALID_SERVER_URL", message: "Use an HTTP or HTTPS server URL." });
-  let path = parsed.pathname.replace(/\/+$/, "");
-  if (path.endsWith("/health")) path = path.slice(0, -"/health".length).replace(/\/+$/, "");
-  return `${parsed.origin}${path === "/api" || path.endsWith("/api") ? path : `${path}/api`}`;
-}
-
 export function createMobileApi(baseUrl, { fetchImpl = fetch } = {}) {
   const normalizedBaseUrl = normalizeMobileApiBaseUrl(baseUrl);
   return Object.freeze({
     baseUrl: normalizedBaseUrl,
-    getHealth: (options) => request("/health", { ...options, fetchImpl, baseUrl: normalizedBaseUrl }),
+    getHealth: (options) => checkServerHealth(normalizedBaseUrl, { ...options, fetchImpl }),
     listEncounterCharacters: (options) => request("/encounter/characters", { ...options, fetchImpl, baseUrl: normalizedBaseUrl }),
     listEncounterCreatures: (options) => request("/encounter/creatures", { ...options, fetchImpl, baseUrl: normalizedBaseUrl }),
     listEncounterScenarios: (options) => request("/encounter/scenarios", { ...options, fetchImpl, baseUrl: normalizedBaseUrl }),
@@ -48,7 +42,7 @@ async function validateSetup(input, options) {
 async function request(path, { baseUrl, method = "GET", body, signal, fetchImpl }) {
   let response;
   try {
-    response = await fetchImpl(`${baseUrl}${path}`, { method, signal, headers: body === undefined ? {} : { "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
+    response = await fetchImpl(`${baseUrl}/api${path}`, { method, signal, headers: body === undefined ? {} : { "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
   } catch (error) {
     if (error?.name === "AbortError") throw error;
     throw new MobileApiError({ message: "The server is unavailable. Check the configured URL." });
