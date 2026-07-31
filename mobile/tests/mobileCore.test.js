@@ -93,6 +93,18 @@ test("mobile app registers the complete explicit stack and settings exposes pers
   assert.match(readFileSync(new URL("../src/config/appMetadata.js", import.meta.url), "utf8"), /expoConfig/);
 });
 
+test("mobile presentation uses centralized typography, tokens, font loading, and button variants", () => {
+  const app = readFileSync(new URL("../src/app/App.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../src/theme/styles.js", import.meta.url), "utf8");
+  const button = readFileSync(new URL("../src/components/PrimaryButton.js", import.meta.url), "utf8");
+  assert.match(app, /useFonts/);
+  assert.match(app, /LoadingState/);
+  assert.match(styles, /typography\.displayFamily|displayFamily/);
+  assert.match(styles, /spacing/);
+  assert.match(styles, /radii/);
+  for (const variant of ["primary", "secondary", "ghost", "danger"]) assert.match(button, new RegExp(variant));
+});
+
 test("mobile API rejects invalid URLs and returns encounter validation details", async () => {
   assert.throws(() => normalizeMobileApiBaseUrl("not a URL"), { code: "INVALID_SERVER_URL" });
   const api = createMobileApi("http://localhost:3000", {

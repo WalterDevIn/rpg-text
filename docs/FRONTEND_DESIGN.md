@@ -412,6 +412,10 @@ Presentation timing is centralized: player `0 ms`, dice `110 ms`, creature `220 
 
 The mobile implementation uses the same platform-neutral timing policy from `shared/src/clientPresentation.js`, Expo `expo-audio` for bounded local playback, and AsyncStorage for presentation preferences. It announces completed output once to screen readers rather than exposing each typewriter character. Historical messages never replay animation or sound; only new events after the restored cursor use the live queue.
 
+## Mobile Retro-Chat Implementation
+
+The mobile client implements a restrained retro-chat system rather than a generic card dashboard. Space Mono is loaded through Expo for display labels, headings, metadata, and controls; platform sans-serif remains the readable body and chat role. Charcoal panels, aged amber action accents, muted cyan context accents, restrained role colors, compact spacing, small radii, and thin borders are centralized in `mobile/src/theme/`. Player bubbles stay right-aligned, Dungeon Master/system bubbles stay left-aligned, creature bubbles use a restrained hostile panel, and dice use a violet panel. The command composer remains keyboard-only with no visible Send button. Font loading has an in-app loading state and a system fallback, while all existing semantic, audio, typewriter, accessibility, safe-area, and reduced-motion behavior is preserved.
+
 ## 18. Implementation boundaries
 
 Frontend code should separate:

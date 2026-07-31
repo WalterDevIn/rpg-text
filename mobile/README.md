@@ -30,6 +30,10 @@ The setup draft is owned by the application context and persisted as a versioned
 
 Creation Hub contains disabled Create Character, Create Companion, and Create Creature actions. They do not navigate, call the server, mutate the draft, or write storage. Settings provides persisted sound, volume, animation, reduced motion, server testing/change, and safe local-reference/preferences clearing without deleting authoritative server data.
 
+## Visual System
+
+The mobile UI uses Space Mono for display labels, metadata, controls, and headings, with the platform sans-serif fallback for readable body and chat text. Fonts load before the navigation shell; if loading fails, the same shell renders with the safe system fallback. `mobile/src/theme/colors.js`, `typography.js`, `metrics.js`, and `styles.js` are the centralized design tokens for the charcoal/aged-display palette, spacing, radii, borders, buttons, inputs, panels, chat bubbles, semantic text, and overlays. Player bubbles remain right-aligned, non-player messages remain left-aligned, dice use a violet panel, and reduced-motion/audio behavior remains owned by the existing presentation preferences.
+
 ## Connection and Version
 
 The connection screen provides the predefined `Codespaces Development` server at `https://shiny-winner-g4qwrwp65g593vg7w-3000.app.github.dev` plus the existing custom address option. Server addresses are stored origin-only and the health request is built centrally as `/api/health`. Health checks use a 10-second timeout and report invalid addresses, unreachable or timed-out servers, authorization/private Codespaces ports, missing health endpoints, HTML pages, invalid JSON, incompatible JSON, and server errors with retry and change-server actions.

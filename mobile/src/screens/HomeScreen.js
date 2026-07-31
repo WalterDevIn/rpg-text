@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Text, View } from "
 import { useMobileContext } from "../app/MobileContext.js";
 import { clearActiveSession, clearEncounterDraft, loadActiveSession } from "../storage/serverStorage.js";
 import { createEncounterDraft } from "../state/encounterDraft.js";
+import { colors } from "../theme/colors.js";
 import { PrimaryButton } from "../components/PrimaryButton.js";
 import { StatusMessage } from "../components/StatusMessage.js";
 import { styles } from "../theme/styles.js";
@@ -19,10 +20,9 @@ export function HomeScreen({ navigation }) {
   return <SafeAreaView style={styles.safe}><ScrollView style={styles.screen} contentContainerStyle={styles.content}>
     <Text style={styles.eyebrow}>RPG TEXT / HOME</Text><Text style={styles.title}>Choose your next scene.</Text>
     <Text style={styles.subtitle}>The server is authoritative. This device stores only a recoverable session reference and setup draft.</Text>
-    {loading ? <ActivityIndicator color="#62e6ff" /> : session ? <View style={styles.card}><Text style={styles.cardTitle}>Continue combat</Text><Text style={styles.cardBody}>{session.snapshot?.participants?.length ?? 0} participants · {session.snapshot?.status ?? "ACTIVE"}</Text><PrimaryButton title="Continue combat" onPress={continueCombat} /></View> : <Text style={styles.status}>No active combat session found.</Text>}
+    {loading ? <ActivityIndicator color={colors.cyan} /> : session ? <View style={[styles.card, styles.activePanel]}><Text style={styles.cardMeta}>RECOVERABLE SESSION</Text><Text style={styles.cardTitle}>Continue combat</Text><Text style={styles.cardBody}>{session.snapshot?.participants?.length ?? 0} participants · {session.snapshot?.status ?? "ACTIVE"}</Text><PrimaryButton title="Continue combat" onPress={continueCombat} /></View> : <View style={styles.emptyState}><Text style={styles.cardMeta}>NO ACTIVE SESSION</Text><Text style={styles.status}>Start a new encounter when you are ready.</Text></View>}
     <PrimaryButton title="New combat" onPress={newCombat} />
-    <PrimaryButton title="Creation hub" onPress={() => navigation.navigate("CreationHub")} />
-    <PrimaryButton title="Settings" onPress={() => navigation.navigate("Settings")} />
+    <View style={styles.secondaryActions}><PrimaryButton title="Creation hub" variant="secondary" onPress={() => navigation.navigate("CreationHub")} /><PrimaryButton title="Settings" variant="secondary" onPress={() => navigation.navigate("Settings")} /></View>
     <StatusMessage error message={error} />
     <StatusMessage message={notice} />
   </ScrollView></SafeAreaView>;

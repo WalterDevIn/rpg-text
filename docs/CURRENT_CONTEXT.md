@@ -230,6 +230,8 @@ The client uses relative `/api` through the development proxy first, then the cu
 
 The mobile connection screen also exposes `Codespaces Development` as a predefined origin, while retaining custom server entry. Origin-only addresses are normalized centrally and health checks request `/api/health` with a 10-second timeout, structured diagnostics, retry/change actions, and Codespaces public-port guidance. The current mobile version is `0.1.0` from Expo metadata and is shown on Connection and Settings; it matches `mobile/app.json` and `mobile/package.json`.
 
+The mobile visual system uses Expo-loaded Space Mono for technical/display text and the platform sans-serif fallback for readable body/chat text. Centralized tokens live in `mobile/src/theme/colors.js`, `typography.js`, `metrics.js`, and `styles.js`; existing screen behavior, chat alignment/grouping, semantic interactions, audio, and reduced-motion behavior are unchanged.
+
 ## Next implementation milestone
 
 Milestone 6: persistent survivors and experience. The next slice should preserve finished combat consequences beyond an in-memory server restart.

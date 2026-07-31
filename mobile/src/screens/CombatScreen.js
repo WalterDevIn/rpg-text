@@ -189,7 +189,7 @@ export function CombatScreen({ route, navigation }) {
             editable={!pending && !disconnected && active?.controller === "manual" && snapshot.status === "ACTIVE"}
           />
           {canSubmit ? <Text style={styles.keyboardHint}>Press Send on the keyboard</Text> : null}
-          {error ? <><StatusMessage error message={error.message} /><PrimaryButton title="Retry session" onPress={reload} disabled={pending} /></> : null}
+          {error ? <><StatusMessage error message={error.message} /><PrimaryButton title="Retry session" variant="secondary" onPress={reload} disabled={pending} /></> : null}
         </>}
       </View>
     </KeyboardAvoidingView>
@@ -201,7 +201,8 @@ export function CombatScreen({ route, navigation }) {
 function Message({ item, onReference }) {
   const segments = item.visibleSegments ?? item.segments ?? [{ text: item.text ?? "" }];
   const isDice = item.senderKind === "dice";
-  return <View style={[styles.message, item.alignment === "right" ? styles.messageRight : styles.messageLeft, isDice && styles.messageDice]} accessibilityLabel={item.phase === "complete" ? segments.map((segment) => segment.text ?? "").join("") : undefined}>
+  const isCreature = item.senderKind === "actor:creature";
+  return <View style={[styles.message, item.alignment === "right" ? styles.messageRight : styles.messageLeft, isDice && styles.messageDice, isCreature && styles.messageCreature, !item.showSenderLabel && styles.messageGrouped]} accessibilityLabel={item.phase === "complete" ? segments.map((segment) => segment.text ?? "").join("") : undefined}>
     {item.showSenderLabel ? <Text style={styles.messageSender}>{item.senderName}</Text> : null}
     <SemanticText segments={segments} references={item.references} onReference={onReference} style={styles.messageText} />
   </View>;
@@ -215,7 +216,7 @@ function Interpretation({ interpretation, snapshot, onSuggestion, onReference })
   const options = [...(interpretation.missing ?? []).flatMap((item) => item.suggestions ?? []), ...(interpretation.ambiguities ?? []).flatMap((item) => item.options ?? [])];
   return <View style={styles.interpretationBox}>
     {segments.length ? <SemanticText segments={segments} references={interpretation.references} onReference={onReference} accessibilityLabel="Authoritative semantic command preview" /> : null}
-    <Text style={{ color: interpretation.status === "RESOLVED" ? colors.green : colors.orange, marginTop: 6 }}>{message}{interpretation.intent?.type ? ` · ${interpretation.intent.type}` : ""}</Text>
+     <Text style={interpretation.status === "RESOLVED" ? styles.interpretationResolved : styles.interpretationWarning}>{message}{interpretation.intent?.type ? ` · ${interpretation.intent.type}` : ""}</Text>
     {actor ? <Text style={styles.interpretationDetail}>Actor: {actor.identity.name}</Text> : null}
     {target ? <Text style={styles.interpretationDetail}>Target: {target.identity.name}</Text> : null}
     {interpretation.message ? <Text style={styles.interpretationDetail}>{interpretation.message}</Text> : null}

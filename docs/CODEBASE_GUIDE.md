@@ -91,6 +91,8 @@ Presentation preferences are stored by `audio/soundPreferences.js`: sound enable
 
 Application-level mobile flow lives in `mobile/src/app/App.js`, `mobile/src/navigation/navigation.js`, and `mobile/src/state/encounterDraft.js`. `HomeScreen` owns recoverable-session discovery and new-combat confirmation. `EncounterSetupScreens.js` owns the four setup steps plus the catalog-backed Add Participant screen; it keeps entity/template, side, and controller decisions separate. `ReviewScreen` is the only combat-start entry point and calls `mobileApi.js` validation before creation. `CreationHubScreen` deliberately contains disabled future actions. `SettingsScreen` consumes the existing audio preference adapter and server storage without deleting server state.
 
+Mobile visual tokens live in `mobile/src/theme/colors.js`, `typography.js`, `metrics.js`, and `styles.js`. `App.js` loads Space Mono through Expo before rendering navigation and falls back to system fonts if loading fails. `PrimaryButton.js` supplies primary, secondary, ghost, danger, compact, and disabled visual variants. The shared styles cover setup cards, connection diagnostics, settings controls, combat bubbles, composer states, semantic text, inspector panels, and modal overlays without changing their data or interaction contracts.
+
 The browser and mobile clients share only platform-neutral logic in `shared/src/clientPresentation.js`: timing constants, source delays, punctuation timing, dice/damage classification, dice count detection, Unicode-safe typewriter behavior, and visible semantic-prefix calculation. React Native components, Expo audio players, AsyncStorage, browser DOM, browser Audio, and navigation are intentionally not shared.
 
 ## Session Lifecycle

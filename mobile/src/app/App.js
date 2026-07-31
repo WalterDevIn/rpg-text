@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { useFonts } from "expo-font";
+import { SpaceMono_400Regular, SpaceMono_700Bold } from "@expo-google-fonts/space-mono";
 import { NavigationContainer, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -14,17 +16,20 @@ import { colors } from "../theme/colors.js";
 import { screens } from "../navigation/navigation.js";
 import { loadEncounterDraft, saveEncounterDraft } from "../storage/serverStorage.js";
 import { createEncounterDraft } from "../state/encounterDraft.js";
+import { LoadingState } from "../components/LoadingState.js";
 
 const Stack = createNativeStackNavigator();
 const navigationTheme = { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.background, card: colors.surface, text: colors.text, border: colors.border, primary: colors.cyan } };
 
 export default function App() {
+  const [fontsLoaded, fontError] = useFonts({ SpaceMono: SpaceMono_400Regular, SpaceMonoBold: SpaceMono_700Bold });
   const [apiBaseUrl, setApiBaseUrl] = useState(null);
   const [draft, setDraft] = useState(createEncounterDraft());
   const service = useMemo(() => apiBaseUrl ? createMobileApi(apiBaseUrl) : null, [apiBaseUrl]);
   useEffect(() => { loadEncounterDraft().then((saved) => saved && setDraft(createEncounterDraft(saved))).catch(() => {}); }, []);
   useEffect(() => { saveEncounterDraft(draft).catch(() => {}); }, [draft]);
   const context = useMemo(() => ({ apiBaseUrl, setApiBaseUrl, service, draft, setDraft }), [apiBaseUrl, service, draft]);
+  if (!fontsLoaded && !fontError) return <LoadingState label="Loading interface" />;
   return (
     <SafeAreaProvider>
       <MobileContext.Provider value={context}>
