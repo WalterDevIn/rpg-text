@@ -85,6 +85,12 @@ The parser supports ATTACK phrases such as `Ataco al goblin`, `Golpeo a la rata`
 
 Presentation preferences are stored by `audio/soundPreferences.js`: sound enabled, master volume, and text animation enabled. Browser autoplay failures are ignored. `prefers-reduced-motion` removes movement/blur, uses effectively immediate output, and suppresses output typewriter sound while leaving input sound independently controlled.
 
+## Mobile Presentation
+
+`mobile/src/screens/CombatScreen.js` composes the mobile chat, keyboard-only command input, interpretation preview, semantic inspector, overview modal, and presentation controls. `mobile/src/components/SemanticText.js` renders structured semantic fragments without HTML; `SemanticInspector.js` displays only public fields in the server reference dictionary. `mobile/src/audio/messagePresentationQueue.js` stages live messages while initial and recovered history is completed immediately. `mobile/src/audio/audioManager.js` uses Expo `expo-audio` pools for the bundled `mobile/assets/sounds` copies, and `audioPreferences.js` persists sound, volume, animation, and reduced-motion values with AsyncStorage.
+
+The browser and mobile clients share only platform-neutral logic in `shared/src/clientPresentation.js`: timing constants, source delays, punctuation timing, dice/damage classification, dice count detection, Unicode-safe typewriter behavior, and visible semantic-prefix calculation. React Native components, Expo audio players, AsyncStorage, browser DOM, browser Audio, and navigation are intentionally not shared.
+
 ## Session Lifecycle
 
 `createCombatSession` allocates an ID, starts a real game session, and saves it. `getCombatSession` returns a snapshot. `getCombatEvents` returns events after the requested cursor. `submitCombatIntent` mutates the authoritative session and saves implicitly because the repository holds the object reference. Unknown IDs return `SESSION_NOT_FOUND`, mapped to HTTP 404. Restarting the process removes every session.

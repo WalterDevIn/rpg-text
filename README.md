@@ -63,6 +63,8 @@ The browser loads all content through REST and sends the setup to `POST /api/com
 
 Combat presentation uses the existing `client/public/sounds/key-press.mp3`, `dice.mp3`, and `dices.mp3` assets. New narrative messages are queued in authoritative order and typewrite progressively; dice messages appear complete with dedicated cues. Sound, master volume, text animation, reduced-motion behavior, skip, and persisted presentation preferences are available in the combat screen.
 
+The Expo SDK 54 mobile client in `mobile/` provides the same semantic combat experience without copying browser DOM or Audio code. Semantic references are tappable and open a local inspector, interpretation previews expose authoritative annotations and ambiguity suggestions, and commands submit only through the keyboard Send action. Mobile live output uses the same platform-neutral timing/typewriter policy, while Expo audio, AsyncStorage preferences, safe areas, and React Native inspectors remain mobile-specific.
+
 ## Codespaces connection
 
 The browser first uses relative `/api` requests through the client development proxy. If that path is unavailable, it tries the current development Codespaces fallback, and the Server connection panel accepts a backend base URL without `/api/health`. Values can be tested, saved in local storage, reset to automatic mode, and retried. The current forwarded development example is `https://shiny-winner-g4qwrwp65g593vg7w-3000.app.github.dev`; it is not a production endpoint.

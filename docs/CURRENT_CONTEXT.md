@@ -81,6 +81,8 @@ npm run client
 npm run server:cli
 npm run server
 npm run dev
+npm run mobile
+npm run test:mobile
 ```
 
 `npm run server` serves REST at `http://localhost:3000`. `npm run client` serves the browser application at `http://localhost:4173`. `npm run dev` starts both.
@@ -164,9 +166,11 @@ The initial Expo SDK 54 mobile client is implemented under `mobile/`. It persist
 
 Mobile commands are `npm run mobile`, `npm run mobile:start`, and `npm run test:mobile`. The mobile package also provides `npm --prefix mobile run android`, `npm --prefix mobile run ios`, and `npm --prefix mobile run doctor`.
 
-The mobile client is intentionally Phase 1 presentation: it does not yet include the browser client's semantic tooltip interactions, progressive message queue, typewriter animation, audio, or presentation preference controls.
+Mobile combat uses a compact safe-area-aware top bar with the scenario name and a floating combat overview for participants, scenario details, round, and active actor. The permanent participant cards and round/status header were removed from the normal chat layout. Consecutive visible messages group by stable sender identity and only the first message shows the sender label. Commands submitted by a manual actor are right-aligned under that actor's authoritative name; server-controlled creature messages remain left-aligned. The command composer is a single-line input with keyboard-only Send behavior and no visible send control.
 
-Mobile combat uses a compact safe-area-aware top bar with the scenario name and a floating combat overview for participants, scenario details, round, and active actor. The permanent participant cards and round/status header were removed from the normal chat layout. Consecutive visible messages group by stable sender identity and only the first message shows the sender label. Commands submitted by a manual actor are right-aligned under that actor's authoritative name; server-controlled creature messages remain left-aligned. The command composer is a single-line input with a compact accessible send arrow and keyboard-send behavior.
+Mobile semantic presentation is implemented. Structured server segments retain their kinds and reference IDs during progressive rendering. Completed references open a local inspector for public character, creature, item, spell, action, damage, and dice details. Interpretation previews render authoritative annotations, action/actor/target details, status feedback, and ambiguity or incomplete-command suggestions. `DAMAGE` remains distinct from and takes precedence over `DICE_ROLL` visually.
+
+Mobile live presentation uses an ordered queue with immediate historical restoration, immediate local player commands, Unicode-safe non-dice typewriting, dice completion, initiative batching, ordinary dice spacing, skip, sound preferences, reduced-motion behavior, and one accessibility announcement per completed output message. The visible send button was removed; resolved commands submit only through the keyboard Send action. Expo `expo-audio` plays locally bundled copies of the existing key-press and dice assets. Platform-neutral timing, dice, typewriter, and semantic-prefix helpers are shared from `shared/src/clientPresentation.js`; native audio, storage, UI, and navigation remain mobile-specific.
 
 ## Current milestone
 

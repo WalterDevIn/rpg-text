@@ -1,6 +1,11 @@
 const actorOrigins = new Set(["player", "creature"]);
 
-export function createLocalCommandMessage({ actor, sequence, text }) {
+export function semanticStyleKey(kind) { return ["CHARACTER", "CREATURE", "ITEM", "SPELL", "ACTION", "DAMAGE", "DICE_ROLL"].includes(kind) ? kind : "DEFAULT"; }
+
+export function createLocalCommandMessage({ actor, sequence, text, interpretation = null }) {
+  const segments = interpretation?.annotations?.length
+    ? annotationsToSegments(text, interpretation.annotations, interpretation.references)
+    : [{ text }];
   return {
     sequence,
     local: true,
@@ -10,6 +15,8 @@ export function createLocalCommandMessage({ actor, sequence, text }) {
     senderKind: `actor:${actor.identity.kind}`,
     controlledLocally: true,
     text,
+    segments,
+    references: interpretation?.references ?? {},
   };
 }
 
@@ -31,6 +38,7 @@ export function toCombatMessages(events, snapshot) {
     const actorId = actorIdFor(event);
     const actor = actorId ? participants.get(actorId) : null;
     const actorMessage = actor && actorOrigins.has(event.origin);
+    const presented = event.semantic ?? event;
     const senderKind = actorMessage ? `actor:${actor.identity.kind}` : event.origin ?? "system";
     const senderId = actorMessage ? actor.entityId : senderKind;
     const controlledLocally = actorMessage && event.origin === "player" && actor.controller === "manual";
@@ -42,8 +50,23 @@ export function toCombatMessages(events, snapshot) {
       controlledLocally,
       alignment: controlledLocally ? "right" : "left",
       text: event.text ?? eventMessageText(event),
+      segments: event.visibleSegments ?? presented.segments,
+      references: presented.references ?? event.references ?? {},
     };
   });
+}
+
+export function annotationsToSegments(text = "", annotations = [], references = {}) {
+  let cursor = 0;
+  const segments = [];
+  for (const annotation of [...annotations].sort((left, right) => left.start - right.start)) {
+    if (annotation.start < cursor) continue;
+    if (annotation.start > cursor) segments.push({ text: text.slice(cursor, annotation.start) });
+    segments.push({ text: text.slice(annotation.start, annotation.end), semantic: { kind: annotation.kind, referenceId: annotation.referenceId }, reference: references[annotation.referenceId] });
+    cursor = annotation.end;
+  }
+  if (cursor < text.length) segments.push({ text: text.slice(cursor) });
+  return segments;
 }
 
 export function groupCombatMessages(messages) {

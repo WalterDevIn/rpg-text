@@ -208,6 +208,8 @@ It does not own:
 
 The client submits natural-language text and renders interpretation/results. It does not decide the meaning of the text.
 
+The mobile client is a React Native transport consumer under `mobile/`. It uses the same REST contracts, semantic segments, references, interpretation statuses, snapshots, and event order as the browser. Mobile-only code owns React Native layout, safe areas, modal inspectors, presentation orchestration, Expo audio, AsyncStorage preferences, and accessibility behavior. It never parses commands or calculates combat outcomes. Stable timing, dice classification, typewriter, and semantic-prefix helpers used by both clients live in `shared/src/clientPresentation.js`; browser DOM/audio and React Native UI/audio remain separate.
+
 ## 8. Client service boundary
 
 The frontend must access application behavior through a small service interface rather than importing game internals.

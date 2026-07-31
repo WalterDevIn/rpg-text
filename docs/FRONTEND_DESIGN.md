@@ -293,9 +293,11 @@ The input area should:
 - preserve typed text after recoverable validation errors;
 - display actionable error feedback.
 
-The composer previews server-authoritative annotations after a short debounce. `RESOLVED` text can be submitted; `INCOMPLETE`, `AMBIGUOUS`, `UNSUPPORTED`, and `INVALID_CONTEXT` text cannot. Suggestions insert names into the draft and do not bypass the language path. Enter submits resolved text; Shift+Enter creates a newline.
+The composer previews server-authoritative annotations after a short debounce. `RESOLVED` text can be submitted; `INCOMPLETE`, `AMBIGUOUS`, `UNSUPPORTED`, and `INVALID_CONTEXT` text cannot. Suggestions insert names into the draft and do not bypass the language path. Enter/keyboard Send submits resolved text; mobile commands are single-line and have no visible send button.
 
 Recognized fragments use an authoritative semantic preview and interactive tooltips. The overlay preserves original offsets and the editable textarea remains the focus target.
+
+On mobile, semantic fragments use nested React Native `Text` elements and tap-to-open inspectors instead of hover tooltips. The editable `TextInput` remains plain; its authoritative interpretation preview appears above it. Incomplete and ambiguous candidates are tappable suggestions that revise the text and trigger another server preview.
 
 Semantic colors use action orange, character cyan, creature faction colors, item amber, spell blue-violet, damage crimson/orange, and dice violet. Damage is visually distinct from dice because `DAMAGE` has priority over `DICE_ROLL`.
 
@@ -405,6 +407,8 @@ Sounds may support dice and important transitions. They require mute and volume 
 The implemented audiovisual presentation uses `client/public/sounds/key-press.mp3` for input typing and output typewriter voices, `dice.mp3` for one-die rolls, and `dices.mp3` for multi-die and initiative batches. Output uses eight voices at base volume `.18` with playback rates `.86-1.14`; input uses five voices at `.18` with `.9-1.1`; dice uses `.72`. Master volume scales these values.
 
 Presentation timing is centralized: player `0 ms`, dice `110 ms`, creature `220 ms`, normal narrative/system `380 ms`, entrance `240 ms`, normal dwell `90 ms`, character delay `24 ms`, punctuation delay `65 ms`, and ordinary dice interval `1000 ms`. Dice never typewrite. Player commands appear immediately. Sound and text animation can be disabled independently, preferences persist, reduced motion uses an approximately `1 ms` transition and suppresses output typewriter audio, and restored historical messages do not replay effects.
+
+The mobile implementation uses the same platform-neutral timing policy from `shared/src/clientPresentation.js`, Expo `expo-audio` for bounded local playback, and AsyncStorage for presentation preferences. It announces completed output once to screen readers rather than exposing each typewriter character. Historical messages never replay animation or sound; only new events after the restored cursor use the live queue.
 
 ## 18. Implementation boundaries
 

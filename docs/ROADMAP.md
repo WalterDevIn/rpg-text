@@ -325,6 +325,8 @@ Stage authoritative combat messages in order with accessible typewriter, dice, a
 
 Implemented behavior includes bounded audio pools for the existing assets, source-specific entrance delays, Unicode-safe typewriter timing, immediate player/dice handling, initiative batching, ordinary dice spacing, skip, persistent preferences, reduced motion, and silent historical reconnection restoration.
 
+The same presentation milestone is available in the Expo SDK 54 mobile client. Mobile semantic segments are tappable through a local inspector, interpretation previews support authoritative references and ambiguity suggestions, commands use keyboard-only submission, and mobile live output/audio/preferences use platform-specific adapters over shared timing and typewriter helpers. No new server authority or migration stage is introduced.
+
 ## Later stages
 
 Status: `LATER`
