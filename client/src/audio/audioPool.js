@@ -12,8 +12,12 @@ export function createAudioPool({ src, size, volume, rateRange, AudioCtor = glob
       voice.currentTime = 0;
       voice.volume = volume * masterVolume;
       voice.playbackRate = rateRange[0] + random() * (rateRange[1] - rateRange[0]);
-      const playback = voice.play();
-      if (playback?.catch) playback.catch(() => {});
+      try {
+        const playback = voice.play();
+        if (playback?.catch) playback.catch((error) => reportPlaybackError(src, error));
+      } catch (error) {
+        reportPlaybackError(src, error);
+      }
     },
     setMasterVolume(masterVolume) { for (const voice of voices) voice.volume = volume * masterVolume; },
     stop() { for (const voice of voices) { voice.pause(); voice.currentTime = 0; } },
@@ -28,4 +32,9 @@ export function createAudioPool({ src, size, volume, rateRange, AudioCtor = glob
     if ("webkitPreservesPitch" in voice) voice.webkitPreservesPitch = false;
     return voice;
   }
+}
+
+function reportPlaybackError(src, error) {
+  if (error?.name === "NotAllowedError") return;
+  console.warn(`[audio] Could not play ${src}: ${error?.message ?? error}`);
 }
