@@ -77,6 +77,14 @@ The parser supports ATTACK phrases such as `Ataco al goblin`, `Golpeo a la rata`
 
 `application/presentation/presentCombatEvent.js` constructs semantic segments directly from structured events. `client/src/components/semanticText.js` renders both event segments and player annotations with keyboard focus, hover, click-to-pin, and Escape-to-close tooltips. Semantic kinds are CHARACTER, CREATURE, ITEM, SPELL, ACTION, DAMAGE, and DICE_ROLL. Damage has priority over dice: a damage roll is represented only as DAMAGE. Add a new kind in the shared contract, server presentation/reference mapping, and client semantic styles/rendering.
 
+## Audiovisual Presentation
+
+`client/src/audio/soundCatalog.js` maps `TYPEWRITER_KEY` to `/sounds/key-press.mp3`, `SINGLE_DIE` to `/sounds/dice.mp3`, and `MULTIPLE_DICE` to `/sounds/dices.mp3`. `audioPool.js` owns reusable voices: eight output typewriter voices and five input voices use base volume `.18`; dice voices use `.72`. Output playback ranges from `.86` to `1.14`, input from `.9` to `1.1`, and all values are multiplied by the persisted master volume.
+
+`features/combatChat/messagePresentationQueue.js` owns received, pending, active, and complete messages. It deduplicates stable IDs, preserves authoritative order, stages source delays, keeps ordinary dice at least 1000 ms apart, batches initiative, and does not replay completed/history effects on rerender or reconnection. `typewriter.js` reveals Unicode-safe structured segments at 24 ms, or 65 ms for `. , ; : ! ?`, while preserving semantic references. `CombatChat` exposes an explicit Skip control that completes the active message without skipping game events.
+
+Presentation preferences are stored by `audio/soundPreferences.js`: sound enabled, master volume, and text animation enabled. Browser autoplay failures are ignored. `prefers-reduced-motion` removes movement/blur, uses effectively immediate output, and suppresses output typewriter sound while leaving input sound independently controlled.
+
 ## Session Lifecycle
 
 `createCombatSession` allocates an ID, starts a real game session, and saves it. `getCombatSession` returns a snapshot. `getCombatEvents` returns events after the requested cursor. `submitCombatIntent` mutates the authoritative session and saves implicitly because the repository holds the object reference. Unknown IDs return `SESSION_NOT_FOUND`, mapped to HTTP 404. Restarting the process removes every session.
@@ -103,6 +111,8 @@ Catalog definitions are passed to `CombatBuilder`. The builder passes each defin
 - Add a Spanish action verb in `server/src/language/spanish/actionLexicon.js` and recognition logic in `recognizeAction.js`.
 - Add a content alias on the canonical definition, not in a UI component.
 - Add a semantic kind to `shared/src/contracts/combat.js`, then update server references and `client/src/styles/app.css`.
+- Add a sound asset mapping in `client/src/audio/soundCatalog.js` only for an existing file under `client/public/sounds/`.
+- Add a message timing/category rule in `client/src/features/combatChat/messagePresentationPolicy.js`, not in `CombatScreen`.
 
 PostgreSQL would be a new infrastructure persistence adapter implementing the documented repository shape, assembled in `createApplication.js`; it is not implemented. Socket.IO would be a separate HTTP/transport adapter beside the current routes. JWT authentication would be HTTP middleware and application authorization context, also deferred.
 

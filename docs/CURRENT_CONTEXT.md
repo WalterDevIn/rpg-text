@@ -1,6 +1,6 @@
 # Current Context
 
-Last updated: 2026-07-30
+Last updated: 2026-07-31
 
 ## Repository
 
@@ -57,6 +57,8 @@ server/src/language/spanish
 server/src/game/combat/getActionContext.js
 server/src/application/interpretation
 server/src/application/presentation
+client/src/audio
+client/src/features/combatChat
 server/tests
 client/src/app
 client/src/screens
@@ -203,6 +205,8 @@ Scenario data is currently metadata-only: Open Field exposes a 30-foot starting 
 The browser loads characters, creatures, and scenarios from the REST API, validates setup through `POST /api/encounter/validate`, and creates sessions through `POST /api/combat-sessions`. It previews Spanish commands through `/interpret`, executes resolved text through `/commands`, renders original player text with authoritative annotations, and renders event semantic segments with tooltip references. The server automatically resolves AI-controlled turns with a bounded deterministic target-selection policy. Combat sessions are held in memory and disappear when the server restarts.
 
 The supported parser scope is deterministic Spanish ATTACK, DODGE, and PASS phrasing. It returns `RESOLVED`, `INCOMPLETE`, `AMBIGUOUS`, `UNSUPPORTED`, or `INVALID_CONTEXT`; it never silently selects an ambiguous target. Recognized unsupported spell phrases such as `Lanzo bola de fuego` receive SPELL semantics but are not executed. Semantic presentation supports CHARACTER, CREATURE, ITEM, SPELL, ACTION, DAMAGE, and DICE_ROLL, with DAMAGE taking priority over DICE_ROLL.
+
+Combat message presentation is client-owned. `key-press.mp3`, `dice.mp3`, and `dices.mp3` are loaded through bounded audio pools. New non-dice messages enter through an ordered queue, typewrite at 24 ms per character and 65 ms for listed punctuation, and play the typewriter cue per revealed character. Dice entries are complete, use their dedicated cue, and ordinary rolls are separated by 1000 ms; initiative rolls are batched. Sound, master volume, text animation, reduced motion, skip, and historical reconnection behavior are implemented in the client.
 
 The client uses relative `/api` through the development proxy first, then the current Codespaces development fallback, with a user-configurable backend URL persisted locally. The example forwarded backend is `https://shiny-winner-g4qwrwp65g593vg7w-3000.app.github.dev`; it is development-only.
 

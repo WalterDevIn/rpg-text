@@ -315,6 +315,16 @@ Demonstration:
 
 The parser is intentionally domain-limited. Spell phrases can be recognized and highlighted as SPELL but spellcasting remains unsupported. DAMAGE has priority over DICE_ROLL in semantic presentation.
 
+## Milestone 12 — Audiovisual message presentation
+
+Status: `COMPLETED`
+
+Goal:
+
+Stage authoritative combat messages in order with accessible typewriter, dice, and audio presentation without delaying the server or changing game rules.
+
+Implemented behavior includes bounded audio pools for the existing assets, source-specific entrance delays, Unicode-safe typewriter timing, immediate player/dice handling, initiative batching, ordinary dice spacing, skip, persistent preferences, reduced motion, and silent historical reconnection restoration.
+
 ## Later stages
 
 Status: `LATER`

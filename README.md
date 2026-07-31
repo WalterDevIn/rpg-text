@@ -61,6 +61,8 @@ Package-specific commands are `npm run test:server`, `npm run test:client`, and 
 
 The browser loads all content through REST and sends the setup to `POST /api/combat-sessions`. The combat screen previews Spanish commands through `/interpret` and executes them through `/commands`; the server converts them to existing ATTACK, DODGE, and PASS intents. Chat renders authoritative semantic segments with tooltips. Open Field currently supplies setup metadata only; distance, cover, and terrain do not alter combat rules yet. Restarting the server removes sessions.
 
+Combat presentation uses the existing `client/public/sounds/key-press.mp3`, `dice.mp3`, and `dices.mp3` assets. New narrative messages are queued in authoritative order and typewrite progressively; dice messages appear complete with dedicated cues. Sound, master volume, text animation, reduced-motion behavior, skip, and persisted presentation preferences are available in the combat screen.
+
 ## Codespaces connection
 
 The browser first uses relative `/api` requests through the client development proxy. If that path is unavailable, it tries the current development Codespaces fallback, and the Server connection panel accepts a backend base URL without `/api/health`. Values can be tested, saved in local storage, reset to automatic mode, and retried. The current forwarded development example is `https://shiny-winner-g4qwrwp65g593vg7w-3000.app.github.dev`; it is not a production endpoint.

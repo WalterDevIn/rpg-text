@@ -402,6 +402,10 @@ Avoid:
 
 Sounds may support dice and important transitions. They require mute and volume control before broad use.
 
+The implemented audiovisual presentation uses `client/public/sounds/key-press.mp3` for input typing and output typewriter voices, `dice.mp3` for one-die rolls, and `dices.mp3` for multi-die and initiative batches. Output uses eight voices at base volume `.18` with playback rates `.86-1.14`; input uses five voices at `.18` with `.9-1.1`; dice uses `.72`. Master volume scales these values.
+
+Presentation timing is centralized: player `0 ms`, dice `110 ms`, creature `220 ms`, normal narrative/system `380 ms`, entrance `240 ms`, normal dwell `90 ms`, character delay `24 ms`, punctuation delay `65 ms`, and ordinary dice interval `1000 ms`. Dice never typewrite. Player commands appear immediately. Sound and text animation can be disabled independently, preferences persist, reduced motion uses an approximately `1 ms` transition and suppresses output typewriter audio, and restored historical messages do not replay effects.
+
 ## 18. Implementation boundaries
 
 Frontend code should separate:

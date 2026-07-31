@@ -1,6 +1,7 @@
 import { renderAnnotatedText } from "./semanticText.js";
+import { shouldPlayInputSound } from "../audio/inputSound.js";
 
-export function ActionComposer({ snapshot, draft = "", interpretation = null, interpreting = false, pending = false, disabled = false, error = null, onChange, onSubmit, onSuggestion }) {
+export function ActionComposer({ snapshot, draft = "", interpretation = null, interpreting = false, pending = false, disabled = false, error = null, audioManager, onChange, onSubmit, onSuggestion }) {
   const section = document.createElement("section");
   section.className = "action-composer command-composer";
   const active = snapshot.participants.find((participant) => participant.entityId === snapshot.activeEntityId);
@@ -35,8 +36,12 @@ export function ActionComposer({ snapshot, draft = "", interpretation = null, in
   input.value = draft;
   input.setAttribute("aria-label", "Escribe un comando de combate en español");
   input.disabled = pending || disabled;
+  let composing = false;
+  input.addEventListener("compositionstart", () => { composing = true; });
+  input.addEventListener("compositionend", () => { composing = false; });
   input.addEventListener("input", () => onChange(input.value));
   input.addEventListener("keydown", (event) => {
+    if (shouldPlayInputSound(event, composing)) audioManager?.playInputCharacter();
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       if (interpretation?.status === "RESOLVED" && !pending) onSubmit(input.value);
