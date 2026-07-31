@@ -166,6 +166,8 @@ Mobile commands are `npm run mobile`, `npm run mobile:start`, and `npm run test:
 
 The mobile client is intentionally Phase 1 presentation: it does not yet include the browser client's semantic tooltip interactions, progressive message queue, typewriter animation, audio, or presentation preference controls.
 
+Mobile combat uses a compact safe-area-aware top bar with the scenario name and a floating combat overview for participants, scenario details, round, and active actor. The permanent participant cards and round/status header were removed from the normal chat layout. Consecutive visible messages group by stable sender identity and only the first message shows the sender label. Commands submitted by a manual actor are right-aligned under that actor's authoritative name; server-controlled creature messages remain left-aligned. The command composer is a single-line input with a compact accessible send arrow and keyboard-send behavior.
+
 ## Current milestone
 
 Milestone 5: complete playable combat through the browser.

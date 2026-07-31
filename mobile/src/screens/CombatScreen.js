@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, AppState, FlatList, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, Text, TextInput, View } from "react-native";
+import { AppState, FlatList, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StatusBar, Text, TextInput, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMobileContext } from "../app/MobileContext.js";
-import { mergeCombatEvents, eventMessage } from "../utilities/combatEvents.js";
+import { mergeCombatEvents } from "../utilities/combatEvents.js";
+import { createLocalCommandMessage, groupCombatMessages, toCombatMessages } from "../utilities/combatPresentation.js";
 import { colors } from "../theme/colors.js";
 import { styles } from "../theme/styles.js";
 import { PrimaryButton } from "../components/PrimaryButton.js";
@@ -10,6 +12,7 @@ import { StatusMessage } from "../components/StatusMessage.js";
 export function CombatScreen({ route, navigation }) {
   const { service } = useMobileContext();
   const { sessionId, scenario } = route.params;
+  const insets = useSafeAreaInsets();
   const [snapshot, setSnapshot] = useState(route.params.snapshot);
   const [events, setEvents] = useState(mergeCombatEvents([], route.params.events ?? []));
   const [cursor, setCursor] = useState(maxSequence(route.params.events ?? []));
@@ -18,8 +21,11 @@ export function CombatScreen({ route, navigation }) {
   const [interpreting, setInterpreting] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
+  const [overviewOpen, setOverviewOpen] = useState(false);
   const requestVersion = useRef(0);
   const localMessageCounter = useRef(0);
+  const listRef = useRef(null);
+  const nearBottom = useRef(true);
 
   useEffect(() => {
     if (!draft.trim()) { setInterpretation(null); setInterpreting(false); return undefined; }
@@ -29,7 +35,9 @@ export function CombatScreen({ route, navigation }) {
       try {
         const result = await service.interpretCombatCommand(sessionId, draft);
         if (version === requestVersion.current) { setInterpretation(result); setInterpreting(false); }
-      } catch (nextError) { if (version === requestVersion.current) { setError(nextError); setInterpreting(false); } }
+      } catch (nextError) {
+        if (version === requestVersion.current) { setError(nextError); setInterpreting(false); }
+      }
     }, 280);
     return () => clearTimeout(timer);
   }, [draft, service, sessionId]);
@@ -40,7 +48,9 @@ export function CombatScreen({ route, navigation }) {
   }, [cursor, service, sessionId]);
 
   const active = useMemo(() => snapshot.participants.find((participant) => participant.entityId === snapshot.activeEntityId), [snapshot]);
-  const canSubmit = interpretation?.status === "RESOLVED" && !pending && active?.controller === "manual" && snapshot.status === "ACTIVE";
+  const disconnected = error?.code === "NETWORK_ERROR";
+  const canSubmit = interpretation?.status === "RESOLVED" && !pending && !disconnected && active?.controller === "manual" && snapshot.status === "ACTIVE";
+  const messages = useMemo(() => groupCombatMessages(toCombatMessages(events, snapshot)), [events, snapshot]);
 
   async function reload() {
     try {
@@ -59,11 +69,13 @@ export function CombatScreen({ route, navigation }) {
   async function submit() {
     if (!canSubmit) return;
     const originalText = draft;
+    const submittingActor = active;
     setPending(true); setError(null);
     try {
+      const result = await service.executeCombatCommand(sessionId, originalText);
       const localSequence = `${cursor}.${++localMessageCounter.current}`;
       setSnapshot(result.snapshot);
-      setEvents((current) => mergeCombatEvents(current, [{ sequence: localSequence, local: true, origin: "player", text: originalText }]));
+      setEvents((current) => mergeCombatEvents(current, [createLocalCommandMessage({ actor: submittingActor, sequence: localSequence, text: originalText })]));
       appendEvents(result.events ?? []);
       setDraft(""); setInterpretation(null);
     } catch (nextError) {
@@ -76,26 +88,108 @@ export function CombatScreen({ route, navigation }) {
 
   function suggestion(name) { setDraft(draft.match(/\b(?:al|a|la|el)\s+[^,.!?]*$/i) ? draft.replace(/\b(?:al|a|la|el)\s+[^,.!?]*$/i, `al ${name}`) : `${draft.trim()} ${name}`.trim()); }
   function returnToSetup() { navigation.replace("Setup"); }
-  const messages = events.map((event) => ({ id: String(event.sequence), origin: event.local ? "player" : event.origin ?? (event.type === "DICE_ROLLED" ? "dice" : "dm"), text: event.local ? event.text : eventMessage(event), event }));
+  function openOverview() { Keyboard.dismiss(); setOverviewOpen(true); }
 
-  return <SafeAreaView style={styles.safe}><KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-    <View style={styles.content}><Text style={styles.eyebrow}>RPG TEXT / COMBAT</Text><Text style={styles.title}>{scenario?.name ?? "Encounter"}</Text><Text style={styles.status}>ROUND {snapshot.round} · {snapshot.status} · ACTIVE {active?.identity?.name ?? "NONE"}</Text>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 12 }}>{snapshot.participants.map((participant) => <View key={participant.entityId} style={{ borderWidth: 1, borderColor: participant.entityId === snapshot.activeEntityId ? colors.cyan : colors.border, padding: 8, minWidth: 105 }}><Text style={{ color: participant.faction === "monsters" ? colors.red : colors.green, fontSize: 12 }}>{participant.identity.name}</Text><Text style={styles.cardBody}>{participant.health.current}/{participant.health.max} HP{participant.defeated ? " · DEFEATED" : ""}</Text></View>)}</View>
-    </View>
-    <FlatList style={{ flex: 1, paddingHorizontal: 18 }} contentContainerStyle={{ paddingBottom: 12 }} data={messages} keyExtractor={(item) => item.id} renderItem={({ item }) => <Message item={item} />} ListEmptyComponent={<StatusMessage message="Waiting for combat events..." />} />
-    <View style={{ padding: 14, borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }}>
-      {active?.controller !== "manual" && snapshot.status === "ACTIVE" ? <StatusMessage message="The server is resolving the creature turn..." /> : null}
-      {snapshot.status === "FINISHED" ? <><StatusMessage message="Combat finished." /><PrimaryButton title="Return to setup" onPress={returnToSetup} /></> : <>
-        <TextInput style={[styles.input, { minHeight: 52 }]} value={draft} onChangeText={setDraft} placeholder="Ataco al goblin..." placeholderTextColor={colors.muted} multiline editable={!pending && active?.controller === "manual" && snapshot.status === "ACTIVE" && !error?.code?.includes("NETWORK")} returnKeyType="send" onSubmitEditing={submit} />
-        {interpreting ? <StatusMessage message="Interpreting..." /> : null}
-        {interpretation ? <Interpretation interpretation={interpretation} onSuggestion={suggestion} /> : null}
-        <PrimaryButton title={pending ? "Sending..." : "Send command"} onPress={submit} disabled={!canSubmit} />
-        {error ? <><StatusMessage error message={error.message} /><PrimaryButton title="Retry session" onPress={reload} disabled={pending} /></> : null}
-      </>}
-    </View>
-  </KeyboardAvoidingView></SafeAreaView>;
+  return <View style={[styles.safe, { paddingTop: insets.top }]}><StatusBar barStyle="light-content" backgroundColor={colors.background} />
+    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={0}>
+      <View style={styles.combatTopBar}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Open combat overview" onPress={openOverview} style={styles.iconButton}><Text style={styles.menuIcon}>☰</Text></Pressable>
+        <Text numberOfLines={1} style={styles.combatTopTitle}>{scenario?.name ?? "Encounter"}</Text>
+      </View>
+      <FlatList
+        ref={listRef}
+        style={styles.chatList}
+        contentContainerStyle={styles.chatContent}
+        data={messages}
+        keyExtractor={(item) => item.id ? String(item.id) : String(item.sequence)}
+        renderItem={({ item }) => <Message item={item} />}
+        ListEmptyComponent={<StatusMessage message="Waiting for combat events..." />}
+        onScroll={(event) => {
+          const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+          nearBottom.current = contentSize.height - (layoutMeasurement.height + contentOffset.y) < 72;
+        }}
+        scrollEventThrottle={100}
+        onContentSizeChange={() => { if (nearBottom.current) listRef.current?.scrollToEnd({ animated: true }); }}
+      />
+      <View style={[styles.composerArea, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+        {active?.controller !== "manual" && snapshot.status === "ACTIVE" ? <StatusMessage message="The server is resolving the creature turn..." /> : null}
+        {snapshot.status === "FINISHED" ? <><StatusMessage message="Combat finished." /><PrimaryButton title="Return to setup" onPress={returnToSetup} /></> : <>
+          {interpreting ? <StatusMessage message="Interpreting..." /> : null}
+          {interpretation ? <Interpretation interpretation={interpretation} onSuggestion={suggestion} /> : null}
+          <View style={styles.commandRow}>
+            <TextInput
+              style={styles.commandInput}
+              value={draft}
+              onChangeText={setDraft}
+              placeholder="Escribe una acción..."
+              placeholderTextColor={colors.muted}
+              autoCapitalize="sentences"
+              autoCorrect={false}
+              returnKeyType="send"
+              blurOnSubmit
+              onSubmitEditing={() => { if (canSubmit) submit(); }}
+              editable={!pending && !disconnected && active?.controller === "manual" && snapshot.status === "ACTIVE"}
+            />
+            <Pressable accessibilityRole="button" accessibilityLabel="Send command" onPress={submit} disabled={!canSubmit} style={[styles.sendButton, !canSubmit && styles.buttonDisabled]}><Text style={styles.sendIcon}>↑</Text></Pressable>
+          </View>
+          {error ? <><StatusMessage error message={error.message} /><PrimaryButton title="Retry session" onPress={reload} disabled={pending} /></> : null}
+        </>}
+      </View>
+    </KeyboardAvoidingView>
+    <CombatOverview visible={overviewOpen} onClose={() => setOverviewOpen(false)} snapshot={snapshot} scenario={scenario} insets={insets} />
+  </View>;
 }
 
-function Message({ item }) { return <View style={{ alignSelf: item.origin === "player" ? "flex-end" : "flex-start", maxWidth: "90%", borderLeftWidth: 2, borderLeftColor: item.origin === "dice" ? colors.violet : item.origin === "player" ? colors.cyan : colors.border, padding: 10, marginBottom: 9, backgroundColor: colors.surface }}><Text style={{ color: colors.muted, fontSize: 10, textTransform: "uppercase" }}>{item.origin}</Text><Text style={{ color: colors.text, lineHeight: 20, marginTop: 4 }}>{item.text}</Text></View>; }
-function Interpretation({ interpretation, onSuggestion }) { const message = { RESOLVED: "Resolved", INCOMPLETE: "Choose a target", AMBIGUOUS: "Multiple targets match", UNSUPPORTED: "This command is unsupported", INVALID_CONTEXT: "Invalid combat context" }[interpretation.status] ?? interpretation.status; const options = [...(interpretation.missing ?? []).flatMap((item) => item.suggestions ?? []), ...(interpretation.ambiguities ?? []).flatMap((item) => item.options ?? [])]; return <View><Text style={{ color: interpretation.status === "RESOLVED" ? colors.green : colors.orange, marginTop: 8 }}>{message}{interpretation.intent?.type ? ` · ${interpretation.intent.type}` : ""}</Text>{options.map((option) => <Pressable key={option.referenceId ?? option.name} onPress={() => onSuggestion(option.name)}><Text style={{ color: colors.cyan, paddingVertical: 7 }}>Use {option.name}</Text></Pressable>)}</View>; }
+function Message({ item }) {
+  const isDice = item.senderKind === "dice";
+  return <View style={[styles.message, item.alignment === "right" ? styles.messageRight : styles.messageLeft, isDice && styles.messageDice]}>
+    {item.showSenderLabel ? <Text style={styles.messageSender}>{item.senderName}</Text> : null}
+    <Text style={styles.messageText}>{item.text}</Text>
+  </View>;
+}
+
+function Interpretation({ interpretation, onSuggestion }) {
+  const message = { RESOLVED: "Resolved", INCOMPLETE: "Choose a target", AMBIGUOUS: "Multiple targets match", UNSUPPORTED: "This command is unsupported", INVALID_CONTEXT: "Invalid combat context" }[interpretation.status] ?? interpretation.status;
+  const options = [...(interpretation.missing ?? []).flatMap((item) => item.suggestions ?? []), ...(interpretation.ambiguities ?? []).flatMap((item) => item.options ?? [])];
+  return <View><Text style={{ color: interpretation.status === "RESOLVED" ? colors.green : colors.orange, marginTop: 6 }}>{message}{interpretation.intent?.type ? ` · ${interpretation.intent.type}` : ""}</Text>{options.map((option) => <Pressable key={option.referenceId ?? option.name} onPress={() => onSuggestion(option.name)}><Text style={{ color: colors.cyan, paddingVertical: 5 }}>Use {option.name}</Text></Pressable>)}</View>;
+}
+
+function CombatOverview({ visible, onClose, snapshot, scenario, insets }) {
+  const characters = snapshot.participants.filter((participant) => participant.identity.kind === "character");
+  const friendly = snapshot.participants.filter((participant) => participant.identity.kind !== "character" && !isHostile(participant));
+  const hostile = snapshot.participants.filter(isHostile);
+  return <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+    <Pressable style={styles.overviewBackdrop} onPress={onClose} accessibilityLabel="Close combat overview">
+      <Pressable style={[styles.overviewPanel, { marginTop: insets.top + 8, marginBottom: Math.max(insets.bottom, 8) }]} onPress={(event) => event.stopPropagation()}>
+        <View style={styles.overviewHeader}><Text style={styles.overviewTitle}>Combat overview</Text><Pressable accessibilityRole="button" accessibilityLabel="Close combat overview" onPress={onClose} style={styles.closeButton}><Text style={styles.closeText}>×</Text></Pressable></View>
+        <ScrollView contentContainerStyle={styles.overviewContent}>
+          <Text style={styles.overviewMeta}>ROUND {snapshot.round} · {snapshot.status}{activeLabel(snapshot)}</Text>
+          <OverviewSection title="Characters" participants={characters} activeEntityId={snapshot.activeEntityId} />
+          <OverviewSection title="Friendly" participants={friendly} activeEntityId={snapshot.activeEntityId} />
+          <OverviewSection title="Hostile" participants={hostile} activeEntityId={snapshot.activeEntityId} hostile />
+          <Text style={styles.overviewSectionTitle}>Scenario</Text>
+          <Text style={styles.overviewName}>{scenario?.name ?? "Encounter"}</Text>
+          {scenario?.description ? <Text style={styles.overviewBody}>{scenario.description}</Text> : null}
+          {scenario?.startingDistance ? <Text style={styles.overviewBody}>Distance: {scenario.startingDistance} ft</Text> : null}
+        </ScrollView>
+      </Pressable>
+    </Pressable>
+  </Modal>;
+}
+
+function OverviewSection({ title, participants, activeEntityId, hostile = false }) {
+  if (!participants.length) return null;
+  return <View><Text style={[styles.overviewSectionTitle, hostile && { color: colors.red }]}>{title}</Text>{participants.map((participant) => <View key={participant.entityId} style={styles.overviewParticipant}><View style={{ flex: 1 }}><Text style={styles.overviewName}>{participant.identity.name}</Text><Text style={styles.overviewBody}>{participant.controller === "manual" ? "Player controlled" : "Server controlled"}{participant.entityId === activeEntityId ? " · Active" : ""}</Text></View><Text style={[styles.overviewBody, participant.defeated && { color: colors.red }]}>{participant.defeated ? "Defeated" : `${participant.health.current} / ${participant.health.max} HP`}</Text></View>)}</View>;
+}
+
+function activeLabel(snapshot) {
+  const active = snapshot.participants.find((participant) => participant.entityId === snapshot.activeEntityId);
+  return active ? ` · Active: ${active.identity.name}` : "";
+}
+
+function isHostile(participant) {
+  const faction = String(participant.faction ?? "").toLowerCase();
+  return faction === "monsters" || faction === "hostiles" || faction === "enemies" || faction === "enemy";
+}
+
 function maxSequence(events) { return events.reduce((max, event) => Math.max(max, Number(event.sequence) || 0), 0); }
