@@ -8,11 +8,14 @@
     "server:cli": "node server/src/cli/index.js",
     "server": "node server/src/http/server.js",
     "client": "node client/src/app/devServer.js",
+    "mobile": "npm --prefix mobile start",
+    "mobile:start": "npm --prefix mobile start",
     "dev": "node scripts/dev.js",
     "test": "node --test server/tests/*.test.js client/tests/*.test.js tests/integration/*.test.js",
     "test:server": "node --test server/tests/*.test.js",
     "test:client": "node --test client/tests/*.test.js",
-    "test:integration": "node --test tests/integration/*.test.js"
+    "test:integration": "node --test tests/integration/*.test.js",
+    "test:mobile": "node --test mobile/tests/*.test.js"
   },
   "engines": {
     "node": ">=20"

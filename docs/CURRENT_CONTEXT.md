@@ -68,6 +68,8 @@ client/src/services/eventPresenter.js
 client/public
 shared/src/contracts
 tests/integration
+mobile/src
+mobile/tests
 ```
 
 Current commands:
@@ -155,6 +157,14 @@ Primary identity:
 - discreet context information.
 
 The frontend should not adopt a generic blue-gray dashboard style.
+
+## Mobile client
+
+The initial Expo SDK 54 mobile client is implemented under `mobile/`. It persists a user-configured server URL, checks the REST health endpoint, loads server-owned encounter catalogs, validates and creates real combat sessions, renders authoritative events, interprets Spanish commands, submits resolved commands, and reloads snapshots/events after background recovery. It uses the same public REST boundary as the browser client and does not import server game code.
+
+Mobile commands are `npm run mobile`, `npm run mobile:start`, and `npm run test:mobile`. The mobile package also provides `npm --prefix mobile run android`, `npm --prefix mobile run ios`, and `npm --prefix mobile run doctor`.
+
+The mobile client is intentionally Phase 1 presentation: it does not yet include the browser client's semantic tooltip interactions, progressive message queue, typewriter animation, audio, or presentation preference controls.
 
 ## Current milestone
 
