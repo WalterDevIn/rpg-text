@@ -162,7 +162,9 @@ The frontend should not adopt a generic blue-gray dashboard style.
 
 ## Mobile client
 
-The initial Expo SDK 54 mobile client is implemented under `mobile/`. It persists a user-configured server URL, checks the REST health endpoint, loads server-owned encounter catalogs, validates and creates real combat sessions, renders authoritative events, interprets Spanish commands, submits resolved commands, and reloads snapshots/events after background recovery. It uses the same public REST boundary as the browser client and does not import server game code.
+The Expo SDK 54 mobile client is implemented under `mobile/`. It persists a user-configured server URL, checks the REST health endpoint, loads server-owned encounter catalogs, validates and creates real combat sessions, renders authoritative events, interprets Spanish commands, submits resolved commands, and reloads snapshots/events after background recovery. It uses the same public REST boundary as the browser client and does not import server game code.
+
+The application flow now has an explicit connection screen, Home screen, recoverable Continue Combat entry, four-step New Combat flow (participants, scenario, rules, and review), catalog-backed Add Participant, Creation Hub, and Settings routes. The setup draft preserves source IDs, encounter instance keys, side assignments, controller values, scenario, supported rules, and current step through versioned local storage. The structured server contract validates and applies each participant's side and controller, supports duplicate source templates through instance keys, and preserves the legacy array contract for existing consumers. Creation Hub entries are visibly disabled and have no side effects.
 
 Mobile commands are `npm run mobile`, `npm run mobile:start`, and `npm run test:mobile`. The mobile package also provides `npm --prefix mobile run android`, `npm --prefix mobile run ios`, and `npm --prefix mobile run doctor`.
 
@@ -174,7 +176,7 @@ Mobile live presentation uses an ordered queue with immediate historical restora
 
 ## Current milestone
 
-Milestone 5: complete playable combat through the browser.
+Milestone 5: complete playable combat through the browser and mobile clients.
 
 The repository now documents:
 

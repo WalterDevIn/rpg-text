@@ -15,7 +15,8 @@ export function normalizeMobileApiBaseUrl(value) {
   let parsed;
   try { parsed = new URL(input); } catch { throw new MobileApiError({ code: "INVALID_SERVER_URL", message: "Enter a valid server URL." }); }
   if (!/^https?:$/.test(parsed.protocol)) throw new MobileApiError({ code: "INVALID_SERVER_URL", message: "Use an HTTP or HTTPS server URL." });
-  const path = parsed.pathname.replace(/\/+$/, "");
+  let path = parsed.pathname.replace(/\/+$/, "");
+  if (path.endsWith("/health")) path = path.slice(0, -"/health".length).replace(/\/+$/, "");
   return `${parsed.origin}${path === "/api" || path.endsWith("/api") ? path : `${path}/api`}`;
 }
 
@@ -53,7 +54,11 @@ async function request(path, { baseUrl, method = "GET", body, signal, fetchImpl 
     throw new MobileApiError({ message: "The server is unavailable. Check the configured URL." });
   }
   let data;
-  try { data = await response.json(); } catch { throw new MobileApiError({ status: response.status, code: "INVALID_RESPONSE", message: "The server returned an invalid response." }); }
+  let rawBody;
+  try { rawBody = await response.text(); data = JSON.parse(rawBody.replace(/^\uFEFF/, "")); } catch {
+    const preview = String(rawBody ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
+    throw new MobileApiError({ status: response.status, code: "INVALID_RESPONSE", message: `The server returned an invalid response${preview ? `: ${preview}` : "."}`, data: rawBody });
+  }
   if (!response.ok) throw new MobileApiError({ status: response.status, code: data.error?.code ?? "HTTP_ERROR", message: data.error?.message ?? "The server rejected the request.", details: data.error?.details ?? [], data });
   return data;
 }

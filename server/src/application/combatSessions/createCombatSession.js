@@ -8,14 +8,19 @@ import { presentEvents } from "../presentation/presentEvents.js";
 export function createCombatSession(input = {}, dependencies) {
   let { seed = 1, participants = [] } = input;
   let scenario = null;
-  if (input.characterIds || input.creatureIds || input.scenarioId) {
+  if (isStructuredParticipants(input.participants) || input.characterIds || input.creatureIds || input.scenarioId) {
     const validation = validateEncounterSetup(input, dependencies);
     if (!validation.ok) return { ok: false, error: applicationError("INVALID_ENCOUNTER", "Encounter setup is invalid."), errors: validation.errors };
     scenario = dependencies.scenarioCatalog.findById(input.scenarioId);
-    participants = [...input.characterIds, ...input.creatureIds].map((id) => ({
-      definition: dependencies.characterCatalog.findById(id) ?? dependencies.creatureCatalog.findById(id),
-      overrides: { faction: input.assignments[id] === SideId.PARTY ? "heroes" : "monsters" },
-    }));
+    participants = Array.isArray(input.participants)
+      ? input.participants.map((participant) => ({
+        definition: participant.participantKind === "character" ? dependencies.characterCatalog.findById(participant.sourceId) : dependencies.creatureCatalog.findById(participant.sourceId),
+        overrides: { name: participant.displayName, faction: participant.side === SideId.PARTY ? "heroes" : "monsters", controller: participant.controller },
+      }))
+      : [...input.characterIds, ...input.creatureIds].map((id) => ({
+        definition: dependencies.characterCatalog.findById(id) ?? dependencies.creatureCatalog.findById(id),
+        overrides: { faction: input.assignments[id] === SideId.PARTY ? "heroes" : "monsters" },
+      }));
   }
   if (!Array.isArray(participants) || participants.length < 2) return { ok: false, error: applicationError("INVALID_REQUEST", "At least two participants are required") };
   try {
@@ -33,5 +38,7 @@ export function createCombatSession(input = {}, dependencies) {
     return { ok: false, error: applicationError("INVALID_REQUEST", error.message) };
   }
 }
+
+function isStructuredParticipants(participants) { return Array.isArray(participants) && participants.every((participant) => participant && typeof participant.sourceId === "string"); }
 
 function lastEventSequence(session) { return session.events.all().at(-1)?.sequence ?? 0; }

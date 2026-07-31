@@ -8,10 +8,45 @@ import { createAudioPool } from "../src/audio/audioPool.js";
 import { createMobilePresentationPreferences } from "../src/audio/audioPreferences.js";
 import { createMobilePresentationQueue } from "../src/audio/messagePresentationQueue.js";
 import { diceInfo, isDiceMessage, isMultipleDice, presentationPolicy, visibleSemanticSegments } from "../../shared/src/clientPresentation.js";
+import { createEncounterDraft, participantLabel } from "../src/state/encounterDraft.js";
 
 test("mobile API base URLs normalize without requiring /api", () => {
   assert.equal(normalizeMobileApiBaseUrl("http://10.0.2.2:3000"), "http://10.0.2.2:3000/api");
   assert.equal(normalizeMobileApiBaseUrl("https://example.test/api/"), "https://example.test/api");
+  assert.equal(normalizeMobileApiBaseUrl("https://example.test/api/health"), "https://example.test/api");
+});
+
+test("mobile navigation exposes the recoverable home and staged setup routes", () => {
+  const source = readFileSync(new URL("../src/navigation/navigation.js", import.meta.url), "utf8");
+  for (const route of ["HOME", "PARTICIPANTS", "ADD_PARTICIPANTS", "SCENARIO", "RULES", "REVIEW", "CREATION", "SETTINGS"]) assert.match(source, new RegExp(`${route}:`));
+});
+
+test("creation hub actions are disabled rather than pretending to create content", () => {
+  const source = readFileSync(new URL("../src/screens/CreationHubScreen.js", import.meta.url), "utf8");
+  assert.match(source, /disabled/);
+  assert.doesNotMatch(source, /createCharacter|createCreature|fetch\(/);
+});
+
+test("encounter drafts preserve side, controller, scenario, step, and duplicate instance identity", () => {
+  const draft = createEncounterDraft({ participants: [
+    { instanceKey: "rat-1", sourceId: "cave-rat", displayName: "Cave Rat", participantKind: "creature", side: "hostiles", controller: "ai" },
+    { instanceKey: "rat-2", sourceId: "cave-rat", displayName: "Cave Rat", participantKind: "creature", side: "party", controller: "manual" },
+  ], scenarioId: "open-field", ruleConfiguration: { seed: 7 }, currentStep: 3 });
+  assert.equal(draft.participants[1].controller, "manual");
+  assert.equal(participantLabel(draft.participants[0], draft.participants), "Cave Rat 1");
+  assert.equal(participantLabel(draft.participants[1], draft.participants), "Cave Rat 2");
+  assert.equal(draft.scenarioId, "open-field");
+  assert.equal(draft.currentStep, 3);
+});
+
+test("mobile app registers the complete explicit stack and settings exposes persisted volume", () => {
+  const app = readFileSync(new URL("../src/app/App.js", import.meta.url), "utf8");
+  const navigation = readFileSync(new URL("../src/navigation/navigation.js", import.meta.url), "utf8");
+  for (const route of ["Connection", "Home", "NewCombatParticipants", "AddParticipants", "NewCombatScenario", "NewCombatRules", "NewCombatReview", "Combat", "CreationHub", "Settings"]) assert.match(navigation, new RegExp(`\\"${route}\\"`));
+  assert.match(app, /Stack\.Screen/);
+  const settings = readFileSync(new URL("../src/screens/SettingsScreen.js", import.meta.url), "utf8");
+  assert.match(settings, /masterVolume/);
+  assert.match(settings, /clearLocalPreferences/);
 });
 
 test("mobile API rejects invalid URLs and returns encounter validation details", async () => {
@@ -20,6 +55,13 @@ test("mobile API rejects invalid URLs and returns encounter validation details",
     fetchImpl: async () => new Response(JSON.stringify({ error: { code: "INVALID_ENCOUNTER", message: "Choose opposing sides.", details: [{ field: "assignments", message: "Opposing sides are required." }] } }), { status: 422, headers: { "Content-Type": "application/json" } }),
   });
   assert.deepEqual(await api.validateEncounterSetup({}), { ok: false, errors: [{ field: "assignments", message: "Opposing sides are required." }] });
+});
+
+test("mobile API explains a successful non-JSON response", async () => {
+  const api = createMobileApi("http://localhost:3000", {
+    fetchImpl: async () => new Response("<html>Metro</html>", { status: 200 }),
+  });
+  await assert.rejects(api.getHealth(), { code: "INVALID_RESPONSE", status: 200, message: "The server returned an invalid response: <html>Metro</html>" });
 });
 
 test("mobile event merge sorts and deduplicates by sequence", () => {
@@ -127,13 +169,16 @@ test("mobile queue preserves historical immediacy, live order, and skip", async 
   assert.ok(changes.length > 0);
 });
 
-test("mobile audio pool uses bounded voices and master volume without creating per-playback objects", () => {
+test("mobile audio pool uses bounded voices and master volume without creating per-playback objects", async () => {
   const players = [];
-  const pool = createAudioPool({ source: "key", size: 2, volume: 0.18, rateRange: [0.9, 1.1], random: () => 0.5, playerFactory: () => { const player = { volume: 0, playbackRate: 1, pause() {}, play() {}, seekTo() { return Promise.resolve(); }, remove() {} }; players.push(player); return player; } });
+  const pool = createAudioPool({ source: "key", size: 2, volume: 0.18, rateRange: [0.9, 1.1], random: () => 0.5, playerFactory: () => { const player = { volume: 0, playbackRate: 1, playCalls: 0, pause() {}, play() { player.playCalls += 1; }, seekTo() { return Promise.resolve(); }, setPlaybackRate(rate) { player.playbackRate = rate; }, remove() {} }; players.push(player); return player; } });
   pool.play(0.5); pool.play(0.5); pool.play(0.5);
+  await Promise.resolve();
+  await Promise.resolve();
   assert.equal(players.length, 2);
   assert.equal(players[0].volume, 0.09);
   assert.equal(players[0].playbackRate, 1);
+  assert.equal(players[0].playCalls, 2);
   pool.stop();
 });
 

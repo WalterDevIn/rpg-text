@@ -1,0 +1,4 @@
+import { SafeAreaView, ScrollView, Text } from "react-native";
+import { styles } from "../theme/styles.js";
+import { PrimaryButton } from "../components/PrimaryButton.js";
+export function CreationHubScreen({ navigation }) { return <SafeAreaView style={styles.safe}><ScrollView style={styles.screen} contentContainerStyle={styles.content}><Text style={styles.eyebrow}>RPG TEXT / CREATE</Text><Text style={styles.title}>Create future participants.</Text><Text style={styles.subtitle}>These server-backed authoring flows are intentionally deferred. No local or authoritative data is created here.</Text><PrimaryButton title="Create Character · coming later" disabled onPress={() => {}} /><PrimaryButton title="Create Companion · coming later" disabled onPress={() => {}} /><PrimaryButton title="Create Creature · coming later" disabled onPress={() => {}} /><PrimaryButton title="Back" onPress={() => navigation.goBack()} /></ScrollView></SafeAreaView>; }

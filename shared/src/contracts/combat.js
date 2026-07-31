@@ -23,6 +23,7 @@ export const EncounterErrorCode = Object.freeze({
   UNKNOWN_PARTICIPANT: "UNKNOWN_PARTICIPANT",
   SIDE_REQUIRED: "SIDE_REQUIRED",
   OPPOSING_SIDES_REQUIRED: "OPPOSING_SIDES_REQUIRED",
+  INVALID_CONTROLLER: "INVALID_CONTROLLER",
 });
 
 export const SemanticKind = Object.freeze({
@@ -47,6 +48,7 @@ export const InterpretationStatus = Object.freeze({
 /** @typedef {{ status: string, round: number, activeEntityId: string|null, turnOrder: string[], participants: object[], history: object[] }} CombatSnapshot */
 /** @typedef {{ sequence: number, type: string, [key: string]: unknown }} CombatEvent */
 /** @typedef {{ characterIds: string[], creatureIds: string[], assignments: Record<string, string>, scenarioId: string, seed?: number }} EncounterSetupInput */
+/** @typedef {{ participants: { instanceKey: string, sourceId: string, participantKind: string, side: string, controller: string }[], scenarioId: string, ruleConfiguration?: object }} StructuredEncounterSetupInput */
 /** @typedef {{ id: string, name: string, kind: string, hitPoints: { current: number, max: number }, armorClass: number, controller: string, description: string, attack: object|null }} EncounterParticipantSummary */
 /** @typedef {{ id: string, name: string, description: string, startingDistance: string, cover: string, terrain: string }} ScenarioSummary */
 /** @typedef {{ sessionId: string, status: string, snapshot: CombatSnapshot, events: CombatEvent[], nextEventCursor: number }} CombatSessionResult */

@@ -155,6 +155,8 @@ Purpose:
 
 The first implementation may be minimal. It should not become a large dashboard before the combat flow is complete.
 
+The mobile Home screen is intentionally a compact safe-area-aware action surface with Continue Combat only when recovery is possible, New Combat, Create, and Settings. It has no Exit action. New Combat is a sequential four-step stack: Participants, Scenario, Rules, and Review. Creation is a secondary hub with disabled future-authoring actions, not an editor dashboard.
+
 ### 8.2 Encounter setup
 
 The primary reference is the two-column selection layout from `prototype/combat-setup`.

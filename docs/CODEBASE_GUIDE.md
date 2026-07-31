@@ -89,11 +89,15 @@ Presentation preferences are stored by `audio/soundPreferences.js`: sound enable
 
 `mobile/src/screens/CombatScreen.js` composes the mobile chat, keyboard-only command input, interpretation preview, semantic inspector, overview modal, and presentation controls. `mobile/src/components/SemanticText.js` renders structured semantic fragments without HTML; `SemanticInspector.js` displays only public fields in the server reference dictionary. `mobile/src/audio/messagePresentationQueue.js` stages live messages while initial and recovered history is completed immediately. `mobile/src/audio/audioManager.js` uses Expo `expo-audio` pools for the bundled `mobile/assets/sounds` copies, and `audioPreferences.js` persists sound, volume, animation, and reduced-motion values with AsyncStorage.
 
+Application-level mobile flow lives in `mobile/src/app/App.js`, `mobile/src/navigation/navigation.js`, and `mobile/src/state/encounterDraft.js`. `HomeScreen` owns recoverable-session discovery and new-combat confirmation. `EncounterSetupScreens.js` owns the four setup steps plus the catalog-backed Add Participant screen; it keeps entity/template, side, and controller decisions separate. `ReviewScreen` is the only combat-start entry point and calls `mobileApi.js` validation before creation. `CreationHubScreen` deliberately contains disabled future actions. `SettingsScreen` consumes the existing audio preference adapter and server storage without deleting server state.
+
 The browser and mobile clients share only platform-neutral logic in `shared/src/clientPresentation.js`: timing constants, source delays, punctuation timing, dice/damage classification, dice count detection, Unicode-safe typewriter behavior, and visible semantic-prefix calculation. React Native components, Expo audio players, AsyncStorage, browser DOM, browser Audio, and navigation are intentionally not shared.
 
 ## Session Lifecycle
 
 `createCombatSession` allocates an ID, starts a real game session, and saves it. `getCombatSession` returns a snapshot. `getCombatEvents` returns events after the requested cursor. `submitCombatIntent` mutates the authoritative session and saves implicitly because the repository holds the object reference. Unknown IDs return `SESSION_NOT_FOUND`, mapped to HTTP 404. Restarting the process removes every session.
+
+The HTTP encounter contract also accepts structured participants with `instanceKey`, `sourceId`, `participantKind`, `side`, and `controller`. The application validates these fields, resolves source IDs through the canonical catalogs, maps sides to authoritative factions, and applies the requested controller to each combat instance. The legacy character/creature array contract remains for existing consumers.
 
 ## Definitions To ECS Entities
 

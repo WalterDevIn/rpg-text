@@ -12,6 +12,7 @@ import {
 } from "../src/application/index.js";
 import { humanFighter } from "../src/content/characters/humanFighter.js";
 import { goblin } from "../src/content/creatures/goblin.js";
+import { createApplication } from "../src/application/createApplication.js";
 
 test("application boundary creates, reads, and advances a combat session", () => {
   const created = createCombatSession({ seed: 42, participants: [
@@ -32,6 +33,24 @@ test("application boundary creates, reads, and advances a combat session", () =>
 
 test("application boundary returns a structured missing-session error", () => {
   assert.deepEqual(getCombatSnapshot("missing"), { ok: false, error: { code: "SESSION_NOT_FOUND", message: "SESSION_NOT_FOUND" } });
+});
+
+test("structured encounter setup preserves side, controller, and duplicate instance identity", () => {
+  const application = createApplication();
+  const input = {
+    participants: [
+      { instanceKey: "goblin-1", sourceId: "goblin", displayName: "Goblin 1", participantKind: "creature", side: "hostiles", controller: "ai" },
+      { instanceKey: "goblin-2", sourceId: "goblin", displayName: "Goblin 2", participantKind: "creature", side: "hostiles", controller: "manual" },
+      { instanceKey: "human-fighter-1", sourceId: "human-fighter", displayName: "Walter", participantKind: "character", side: "party", controller: "manual" },
+    ],
+    scenarioId: "open-field",
+    ruleConfiguration: { seed: 7 },
+  };
+  assert.equal(application.validateEncounterSetup({ ...input, participants: input.participants.map((participant, index) => index === 0 ? { ...participant, controller: "robot" } : participant) }).ok, false);
+  assert.equal(application.validateEncounterSetup(input).ok, true);
+  const created = application.createCombatSession(input);
+  assert.equal(created.ok, true);
+  assert.deepEqual(created.snapshot.participants.map((participant) => [participant.identity.name, participant.controller]), [["Goblin 1", "ai"], ["Goblin 2", "manual"], ["Walter", "manual"]]);
 });
 
 test("encounter catalog and validation use server-owned content", () => {

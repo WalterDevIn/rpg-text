@@ -327,6 +327,10 @@ Implemented behavior includes bounded audio pools for the existing assets, sourc
 
 The same presentation milestone is available in the Expo SDK 54 mobile client. Mobile semantic segments are tappable through a local inspector, interpretation previews support authoritative references and ambiguity suggestions, commands use keyboard-only submission, and mobile live output/audio/preferences use platform-specific adapters over shared timing and typewriter helpers. No new server authority or migration stage is introduced.
 
+## Mobile application flow — COMPLETED
+
+The Expo client now has an explicit Home-centered stack, recoverable Continue Combat, a four-step setup draft, independent participant side/controller assignment, duplicate encounter-instance labels, server-backed scenario selection, truthful rules presentation, final server validation, and real combat creation. Creation Hub exposes disabled Character, Companion, and Creature actions without editors or side effects. Settings exposes persisted audio/presentation preferences, master volume, connection testing/change, and safe local cleanup. The setup participant payload is supported by the server application boundary while the legacy setup contract remains compatible.
+
 ## Later stages
 
 Status: `LATER`

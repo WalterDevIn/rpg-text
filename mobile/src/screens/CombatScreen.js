@@ -13,6 +13,7 @@ import { colors } from "../theme/colors.js";
 import { styles } from "../theme/styles.js";
 import { PrimaryButton } from "../components/PrimaryButton.js";
 import { StatusMessage } from "../components/StatusMessage.js";
+import { clearActiveSession, saveActiveSession } from "../storage/serverStorage.js";
 
 export function CombatScreen({ route, navigation }) {
   const { service } = useMobileContext();
@@ -93,7 +94,7 @@ export function CombatScreen({ route, navigation }) {
     try {
       const current = await service.getCombatSession(sessionId);
       const missing = await service.getCombatEvents(sessionId, { since: cursor });
-      setSnapshot(current.snapshot); appendEvents(missing.events ?? [], current.snapshot);
+       setSnapshot(current.snapshot); appendEvents(missing.events ?? [], current.snapshot); await saveActiveSession({ sessionId, scenario, snapshot: current.snapshot, nextEventCursor: missing.nextEventCursor ?? cursor });
       setError(null);
     } catch (nextError) { setError(nextError); }
   }
@@ -113,11 +114,11 @@ export function CombatScreen({ route, navigation }) {
     try {
       const result = await service.executeCombatCommand(sessionId, originalText);
       const localSequence = `${cursor}.${++localMessageCounter.current}`;
-      setSnapshot(result.snapshot);
+       setSnapshot(result.snapshot);
       const localMessage = createLocalCommandMessage({ actor: submittingActor, sequence: localSequence, text: originalText, interpretation: submittedInterpretation });
       setEvents((current) => mergeCombatEvents(current, [localMessage]));
       presentationQueue.enqueue([localMessage]);
-      appendEvents(result.events ?? [], result.snapshot);
+       appendEvents(result.events ?? [], result.snapshot); await saveActiveSession({ sessionId, scenario, snapshot: result.snapshot, nextEventCursor: result.nextEventCursor ?? maxSequence(result.events ?? []) });
       setDraftValue(""); setInterpretation(null);
     } catch (nextError) {
       setError(nextError);
@@ -139,7 +140,7 @@ export function CombatScreen({ route, navigation }) {
     const replacement = draft.match(/\b(?:al|a|la|el)\s+[^,.!?]*$/i);
     setDraftValue(replacement ? `${draft.slice(0, replacement.index)}al ${name}` : `${draft.trim()} ${name}`.trim());
   }
-  function returnToSetup() { navigation.replace("Setup"); }
+  async function returnToHome() { if (snapshot.status === "FINISHED") await clearActiveSession(); navigation.replace("Home"); }
   function openOverview() { Keyboard.dismiss(); setOverviewOpen(true); }
   function updatePreference(next) { const values = preferences.update(next); setPresentationPreferences(values); if (next.textAnimationEnabled === false) presentationQueue.showAll(); }
   function openReference(reference) { setInspector(reference); }
@@ -168,7 +169,7 @@ export function CombatScreen({ route, navigation }) {
       />
       <View style={[styles.composerArea, { paddingBottom: Math.max(insets.bottom, 8) }]}>
         {active?.controller !== "manual" && snapshot.status === "ACTIVE" ? <StatusMessage message="The server is resolving the creature turn..." /> : null}
-        {snapshot.status === "FINISHED" ? <><StatusMessage message="Combat finished." /><PrimaryButton title="Return to setup" onPress={returnToSetup} /></> : <>
+        {snapshot.status === "FINISHED" ? <><StatusMessage message="Combat finished." /><PrimaryButton title="Return to home" onPress={returnToHome} /></> : <>
           {interpreting ? <StatusMessage message="Interpreting..." /> : null}
           {interpretation ? <Interpretation interpretation={interpretation} snapshot={snapshot} onSuggestion={suggestion} onReference={openReference} /> : null}
           <TextInput
@@ -192,7 +193,7 @@ export function CombatScreen({ route, navigation }) {
         </>}
       </View>
     </KeyboardAvoidingView>
-    <CombatOverview visible={overviewOpen} onClose={() => setOverviewOpen(false)} snapshot={snapshot} scenario={scenario} insets={insets} preferences={presentationPreferences} onPreferenceChange={updatePreference} />
+    <CombatOverview visible={overviewOpen} onClose={() => setOverviewOpen(false)} onLeave={returnToHome} snapshot={snapshot} scenario={scenario} insets={insets} preferences={presentationPreferences} onPreferenceChange={updatePreference} />
     <SemanticInspector reference={inspector} onClose={() => setInspector(null)} insets={insets} />
   </View>;
 }
@@ -222,7 +223,7 @@ function Interpretation({ interpretation, snapshot, onSuggestion, onReference })
   </View>;
 }
 
-function CombatOverview({ visible, onClose, snapshot, scenario, insets, preferences, onPreferenceChange }) {
+function CombatOverview({ visible, onClose, onLeave, snapshot, scenario, insets, preferences, onPreferenceChange }) {
   const characters = snapshot.participants.filter((participant) => participant.identity.kind === "character");
   const friendly = snapshot.participants.filter((participant) => participant.identity.kind !== "character" && !isHostile(participant));
   const hostile = snapshot.participants.filter(isHostile);
@@ -239,7 +240,8 @@ function CombatOverview({ visible, onClose, snapshot, scenario, insets, preferen
           <Text style={styles.overviewName}>{scenario?.name ?? "Encounter"}</Text>
           {scenario?.description ? <Text style={styles.overviewBody}>{scenario.description}</Text> : null}
           {scenario?.startingDistance ? <Text style={styles.overviewBody}>Distance: {scenario.startingDistance} ft</Text> : null}
-          <PresentationSettings preferences={preferences} onChange={onPreferenceChange} />
+           <PresentationSettings preferences={preferences} onChange={onPreferenceChange} />
+           <PrimaryButton title="Return to home" onPress={onLeave} />
         </ScrollView>
       </Pressable>
     </Pressable>

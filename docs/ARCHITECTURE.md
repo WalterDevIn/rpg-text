@@ -210,6 +210,8 @@ The client submits natural-language text and renders interpretation/results. It 
 
 The mobile client is a React Native transport consumer under `mobile/`. It uses the same REST contracts, semantic segments, references, interpretation statuses, snapshots, and event order as the browser. Mobile-only code owns React Native layout, safe areas, modal inspectors, presentation orchestration, Expo audio, AsyncStorage preferences, and accessibility behavior. It never parses commands or calculates combat outcomes. Stable timing, dice classification, typewriter, and semantic-prefix helpers used by both clients live in `shared/src/clientPresentation.js`; browser DOM/audio and React Native UI/audio remain separate.
 
+The mobile application shell uses an explicit React Navigation native stack: Connection, Home, NewCombatParticipants, AddParticipants, NewCombatScenario, NewCombatRules, NewCombatReview, Combat, CreationHub, and Settings. A focused application-owned encounter draft preserves compact participant source IDs, encounter instance keys, side, controller, scenario, supported rule configuration, and current step across setup navigation. Review submits structured participant data to the server validation boundary; the client does not infer combat validity or resolve controller behavior. Creation Hub is intentionally a visible, inactive boundary for deferred authoring flows.
+
 ## 8. Client service boundary
 
 The frontend must access application behavior through a small service interface rather than importing game internals.
